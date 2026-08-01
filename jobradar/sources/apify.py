@@ -130,6 +130,10 @@ def run_posts(cfg: Dict) -> List[Post]:
     conf = _conf(cfg)
     if not conf.get("enabled"):
         return []
+    if os.getenv("JOBRADAR_FREE_ONLY"):
+        # Set by restart-triggered boot scrapes and the dashboard button, so neither a
+        # crash loop nor button-mashing can spend Apify budget. Daily cron runs unset it.
+        return []
     profiles = (cfg.get("linkedin_creators") or [])[:int(conf.get("max_creator_profiles", 21))]
     if not profiles:
         return []
@@ -221,6 +225,8 @@ def run_jobs(cfg: Dict) -> List[Job]:
     """LinkedIn job search through Apify, for the companies whose own boards are walled."""
     conf = _conf(cfg)
     if not conf.get("enabled") or not conf.get("scrape_jobs"):
+        return []
+    if os.getenv("JOBRADAR_FREE_ONLY"):
         return []
 
     budget = float(conf.get("budget_usd", 2.0))

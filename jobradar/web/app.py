@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -55,11 +57,12 @@ def create_app(cfg: dict) -> FastAPI:
     @app.post("/login")
     def login(password: str = Form(...)):
         if not auth.check_password(password):
+            time.sleep(0.8)      # blunt but effective brute-force throttle
             return RedirectResponse("/login?bad=1", status_code=303)
         resp = RedirectResponse("/", status_code=303)
         resp.set_cookie(auth.COOKIE, auth.make_token(), max_age=auth.MAX_AGE,
                         httponly=True, samesite="lax",
-                        secure=bool(__import__("os").getenv("COOKIE_SECURE", "")))
+                        secure=bool(os.getenv("COOKIE_SECURE", "")))
         return resp
 
     @app.get("/logout")
@@ -132,8 +135,11 @@ def create_app(cfg: dict) -> FastAPI:
 
     @app.post("/refresh")
     def refresh(back: str = Form("/")):
+        # Button clicks scrape free sources only — Apify costs money per run and
+        # belongs to the daily scheduler, not to an unbounded UI action.
+        env = {**os.environ, "JOBRADAR_FREE_ONLY": "1"}
         subprocess.Popen([sys.executable, "-m", "jobradar.cli", "run"],
-                         cwd=cfg["_root"],
+                         cwd=cfg["_root"], env=env,
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return RedirectResponse(back or "/", status_code=303)
 
