@@ -31,10 +31,30 @@ def _db_empty() -> bool:
         return True
 
 
+DAY_NAMES = {"mon": 0, "tue": 1, "wed": 2, "thu": 3, "fri": 4, "sat": 5, "sun": 6}
+
+
+def _scrape_days() -> set:
+    """Weekdays the scheduled scrape runs. Default Mon/Wed/Fri — fresh roles Monday
+    morning, midweek top-up, and Friday's batch before the weekend, at a third of the
+    daily Apify spend."""
+    raw = os.getenv("SCRAPE_DAYS", "mon,wed,fri")
+    days = set()
+    for tok in raw.replace(" ", "").lower().split(","):
+        if tok in DAY_NAMES:
+            days.add(DAY_NAMES[tok])
+        elif tok.isdigit():
+            days.add(int(tok) % 7)
+    return days or {0, 2, 4}
+
+
 def _next_run(hour: int) -> datetime:
     now = datetime.now(timezone.utc)
+    days = _scrape_days()
     target = now.replace(hour=hour, minute=0, second=0, microsecond=0)
     if target <= now:
+        target += timedelta(days=1)
+    while target.weekday() not in days:
         target += timedelta(days=1)
     return target
 
@@ -91,5 +111,6 @@ def start(root: str) -> None:
             time.sleep(max(60, sleep_for))
             _run_once(root)
 
+    day_list = ",".join(k for k, v in DAY_NAMES.items() if v in _scrape_days())
     threading.Thread(target=loop, name="jobradar-scheduler", daemon=True).start()
-    print(f"[scheduler] daily scrape armed for {hour:02d}:00 UTC", flush=True)
+    print(f"[scheduler] scrape armed for {hour:02d}:00 UTC on {day_list}", flush=True)

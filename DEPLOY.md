@@ -36,7 +36,8 @@ railway variables --set "DASHBOARD_PASSWORD=<pick a real one>" \
 | `SESSION_SECRET` | Signs the session cookie. If unset, a random one is generated per boot, so every restart logs her out. |
 | `COOKIE_SECURE` | Set to `1` — Railway serves HTTPS, so the cookie should be HTTPS-only. |
 | `DB_PATH` / `PROFILE_PATH` | Point at the mounted volume. |
-| `SCRAPE_HOUR_UTC` | Daily scrape hour. `3` = 08:30 IST. |
+| `SCRAPE_HOUR_UTC` | Scrape hour. `3` = 08:30 IST. |
+| `SCRAPE_DAYS` | Weekdays to scrape, default `mon,wed,fri`. |
 | `SCRAPE_ON_BOOT` | `1` (default) fills an empty database on first deploy. Set `0` later. |
 | `RUN_SCHEDULER` | `0` disables the daily scrape entirely. |
 | `SMTP_*`, `DIGEST_TO` | Optional. Set them and the scheduler emails a digest after each scrape. |
