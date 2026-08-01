@@ -1,0 +1,426 @@
+# Job Radar — targeting config for Diya Singh (SDE / Security Engineering, 2026 grad)
+# Everything here is tunable. Change a number, re-run `rescore`, see the effect immediately.
+
+db_path: data/jobs.db
+
+# Company boards are independent hosts, so they're fetched concurrently. Sequentially
+# ~170 boards made a full run take 12 minutes, nearly all of it waiting on sockets.
+fetch_workers: 12
+profile_path: data/profile.json
+
+# Score floors. Dashboard shows everything above the first, the digest only emails the second.
+min_score_dashboard: 40
+min_score_digest: 62
+
+# ---------------------------------------------------------------- targeting
+
+# The metros worth applying to. Everything else in India still gets collected but is
+# pushed down (see india_offmetro), so Chennai/Kolkata/Ahmedabad/Jaipur/Kochi/Trivandrum
+# are visible if she goes looking and never clutter the top of the list.
+preferred_locations:
+  - delhi
+  - new delhi
+  - ncr
+  - gurgaon
+  - gurugram
+  - noida
+  - bengaluru
+  - bangalore
+  - hyderabad
+  - pune
+  - mumbai
+
+# Roles outside the preferred set lose points instead of being dropped, so a genuinely
+# global-remote role still surfaces. Set false to stop penalising non-India locations.
+# This also downgrades "Remote - USA" style postings, which are not remote from Delhi.
+penalize_offshore: true
+
+# Staffing marketplaces and AI-data-labelling shops that post thousands of listings
+# titled "Software Engineer" but are not software engineering jobs.
+blocked_companies:
+  - alignerr
+  - outlier ai
+  - hackajob
+  - turing.com
+  - scale ai training
+  - remotasks
+  - uplers
+  - crossover
+
+include_internships: false   # she graduates 2026 — flip to true if she wants intern conversions
+include_senior: false        # drops senior/staff/lead/manager AND levelled titles (Engineer II, SDE-2, L3)
+max_years_required: 1        # fresher: a JD demanding 2+ years is rejected outright
+
+# Google/NVIDIA run "Software Engineer, PhD, Early Career" tracks that score ~90 on
+# every other signal and are closed to a BTech holder. Set true only if she ever
+# wants to see them.
+allow_advanced_degree_roles: false
+stale_days: 30
+offtitle_skill_floor: 6      # non-obvious titles need this many resume-skill hits to survive
+
+priority_skills:
+  - python
+  - fastapi
+  - aws
+  - docker
+  - terraform
+  - security
+  - application security
+  - microservices
+  - ci/cd
+  - kubernetes
+  - linux
+  - distributed systems
+
+dream_companies:
+  - rippling
+  - cloudflare
+  - atlassian
+  - databricks
+  - stripe
+  - datadog
+  - crowdstrike
+  - okta
+  - zscaler
+  - snyk
+  - hackerone
+  - semgrep
+  - postman
+  - razorpay
+  - phonepe
+  - google
+  - microsoft
+  - amazon
+  - oracle
+
+weights:
+  title_match: 25
+  security_bonus: 12
+  junior_bonus: 15
+  skill_cap: 30
+  per_skill: 2.0
+  per_priority_skill: 2.0
+  location_match: 12
+  remote_bonus: 8
+  location_miss: 15
+  geo_locked_remote: 12   # "Remote - USA" from an India-based applicant
+  india_offmetro: 6       # in India, but not a metro she'd move to
+  fresh_24h: 10
+  fresh_7d: 5
+  stale_penalty: 8
+  dream_company: 10
+
+# ---------------------------------------------------------------- sources
+
+sources:
+  linkedin_jobs:
+    enabled: true
+    keywords:
+      - software engineer
+      - security engineer
+      - backend engineer
+      - application security engineer
+      - graduate software engineer
+    locations:
+      - India
+      - Bengaluru, Karnataka, India
+      - Delhi, India
+    window: week          # 24h | week | month
+    pages: 2              # 25 cards per page, per keyword, per location
+    experience_levels:    # entry | associate | internship | mid
+      - entry
+      - associate
+    remote_only: false
+
+  # Needs your own LinkedIn cookie. Off by default — read the header comment in
+  # jobradar/sources/linkedin_posts.py before switching it on.
+  linkedin_posts:
+    enabled: false
+    keywords:
+      - hiring software engineer india
+      - hiring security engineer
+      - "we are hiring backend engineer"
+    date_posted: past-week
+    pages: 1
+
+  remoteok:
+    enabled: true
+
+  hn_whoishiring:
+    enabled: true
+
+  ats:
+    enabled: true
+
+  # Direct career-site APIs (Amazon, Workday tenants, JPMorgan, Netflix).
+  bigco:
+    enabled: true
+
+  # Per-company LinkedIn feeds — the only route to Google/Microsoft/Apple/Meta/
+  # Uber/Flipkart/Swiggy/Zepto, all of which block their own careers APIs.
+  linkedin_companies:
+    enabled: true
+    # Keyword-scoped, or f_C returns the company's entire job board (sales, procurement,
+    # trust & safety) and most requests are spent on cards the title gate throws away.
+    keywords:
+      - software engineer
+      - security engineer
+    locations: [India]
+    window: month
+    company_pages: 1
+    experience_levels: [entry, associate]
+
+  # Hiring posts from the named creators below. Needs a LinkedIn cookie OR Apify.
+  linkedin_creators:
+    enabled: false
+    posts_per_profile: 10
+    max_age_days: 14
+
+  # Apify-backed scraping: creator posts + the bot-walled job boards.
+  # Costs real money per run — see budget_usd. Off until you switch it on.
+  apify:
+    enabled: true
+    budget_usd: 0.60          # hard stop per run, checked against Apify's usage API first
+    posts_per_profile: 6
+    max_creator_profiles: 21
+    posted_limit: month       # any | 24h | week | month | 3months
+    scrape_jobs: false        # LinkedIn company feeds already cover jobs for free
+
+
+# ---------------------------------------------------------------- linkedin company feeds
+# Numeric LinkedIn company IDs, every one VERIFIED by tools/resolve_linkedin_companies.py
+# (it runs a real search per ID and checks the company name that comes back). Do not
+# hand-write an ID here — a wrong number silently returns another company's jobs.
+# Re-run: ./.venv/bin/python tools/resolve_linkedin_companies.py
+linkedin_companies:
+  - {name: Google, company_id: 1441}   # verified, 10 India cards
+  - {name: Microsoft, company_id: 1035}   # verified, 10 India cards
+  - {name: Apple, company_id: 162479}   # verified, 10 India cards
+  - {name: Meta, company_id: 10667}   # verified, 10 India cards
+  - {name: Amazon, company_id: 1586}   # verified, 10 India cards
+  - {name: Netflix, company_id: 165158}   # verified, 6 India cards
+  - {name: NVIDIA, company_id: 3608}   # verified, 10 India cards
+  - {name: Uber, company_id: 1815218}   # verified, 10 India cards
+  - {name: Flipkart, company_id: 321062}   # verified, 10 India cards
+  - {name: Zepto, company_id: 76108196}   # verified, 10 India cards
+  - {name: Myntra, company_id: 361348}   # verified, 10 India cards
+  - {name: Razorpay, company_id: 3788927}   # verified, 10 India cards
+  - {name: Paytm, company_id: 2340144}   # verified, 10 India cards
+  - {name: Meesho, company_id: 10037698}   # verified, 10 India cards
+  - {name: Goldman Sachs, company_id: 1382}   # verified, 10 India cards
+  - {name: JPMorgan, company_id: 1068}   # verified, 10 India cards
+  - {name: Deutsche Bank, company_id: 1262}   # verified, 10 India cards
+  - {name: HSBC, company_id: 1241}   # verified, 10 India cards
+  - {name: Citi, company_id: 11448}   # verified, 10 India cards
+  - {name: American Express, company_id: 1277}   # verified, 10 India cards
+  - {name: BlackRock, company_id: 4764}   # verified, 10 India cards
+  - {name: UBS, company_id: 1214}   # verified, 10 India cards
+  - {name: Rubrik, company_id: 4840301}   # verified, 10 India cards
+  - {name: Atlassian, company_id: 22688}   # verified, 10 India cards
+  - {name: Salesforce, company_id: 3185}   # verified, 10 India cards
+  - {name: Adobe, company_id: 1480}   # verified, 10 India cards
+  - {name: Cisco, company_id: 1063}   # verified, 10 India cards
+  - {name: Qualcomm, company_id: 2017}   # verified, 10 India cards
+  - {name: Intuit, company_id: 1666}   # verified, 10 India cards
+  - {name: ServiceNow, company_id: 29352}   # verified, 10 India cards
+  - {name: Walmart, company_id: 2646}   # verified, 5 India cards
+  - {name: LinkedIn, company_id: 1337}   # verified, 10 India cards
+  - {name: Oracle, company_id: 1028}   # verified, 10 India cards
+  - {name: SAP, company_id: 1115}   # verified, 10 India cards
+  - {name: IBM, company_id: 1009}   # verified, 10 India cards
+  - {name: Tower Research, company_id: 36865}   # verified, 10 India cards
+  - {name: Optiver, company_id: 13216}   # verified, 3 India cards
+  - {name: Swiggy, company_id: 9252341}   # verified
+  - {name: Morgan Stanley, company_id: 497017}   # verified
+  - {name: Barclays, company_id: 1426}   # verified
+  - {name: Wells Fargo, company_id: 1235}   # verified
+
+  - {name: CrowdStrike, company_id: 2497653}   # verified, 10 India cards
+  - {name: Palo Alto Networks, company_id: 30086}   # verified, 10 India cards
+  - {name: SentinelOne, company_id: 2886771}   # verified, 10 India cards
+  - {name: Nutanix, company_id: 735085}   # verified, 10 India cards
+  - {name: Databricks, company_id: 3477522}   # verified, 10 India cards
+  - {name: Deel, company_id: 18922914}   # verified, 2 India cards
+  - {name: PolicyBazaar, company_id: 303524}   # verified, 10 India cards
+  - {name: Delhivery, company_id: 2312777}   # verified, 10 India cards
+  - {name: ShareChat, company_id: 6605974}   # verified, 5 India cards
+  - {name: InMobi, company_id: 104812249}   # verified, 3 India cards
+  - {name: IMC Trading, company_id: 200030}   # verified, 10 India cards
+  - {name: WorldQuant, company_id: 276383}   # verified, 6 India cards
+  - {name: Texas Instruments, company_id: 1397}   # verified, 10 India cards
+  - {name: Akamai, company_id: 3925}   # verified, 10 India cards
+  - {name: F5, company_id: 4841}   # verified, 10 India cards
+  - {name: Fortinet, company_id: 6460}   # verified, 10 India cards
+  - {name: Thoughtworks, company_id: 157356}   # verified, 1 India cards
+  - {name: Siemens, company_id: 1043}   # verified, 10 India cards
+
+  - {name: Rippling, company_id: 17988315}   # verified, 10 India cards
+  - {name: CrowdStrike, company_id: 2497653}   # verified, 10 India cards
+  - {name: Palo Alto Networks, company_id: 30086}   # verified, 10 India cards
+  - {name: SentinelOne, company_id: 2886771}   # verified, 10 India cards
+  - {name: Nutanix, company_id: 735085}   # verified, 10 India cards
+  - {name: Databricks, company_id: 3477522}   # verified, 10 India cards
+  - {name: Deel, company_id: 18922914}   # verified, 2 India cards
+  - {name: PolicyBazaar, company_id: 303524}   # verified, 10 India cards
+  - {name: Delhivery, company_id: 2312777}   # verified, 10 India cards
+  - {name: ShareChat, company_id: 6605974}   # verified, 5 India cards
+  - {name: InMobi, company_id: 104812249}   # verified, 3 India cards
+  - {name: IMC Trading, company_id: 200030}   # verified, 10 India cards
+  - {name: WorldQuant, company_id: 276383}   # verified, 6 India cards
+  - {name: Texas Instruments, company_id: 1397}   # verified, 10 India cards
+  - {name: Akamai, company_id: 3925}   # verified, 10 India cards
+  - {name: F5, company_id: 4841}   # verified, 10 India cards
+  - {name: Fortinet, company_id: 6460}   # verified, 10 India cards
+  - {name: Thoughtworks, company_id: 157356}   # verified, 1 India cards
+  - {name: Siemens, company_id: 1043}   # verified, 10 India cards
+
+# ---------------------------------------------------------------- direct career APIs
+bigco:
+  - kind: amazon
+    label: Amazon
+    country: IND
+    max_per_query: 300
+    queries: [software development engineer, security engineer, software engineer]
+
+  - kind: oracle_orc
+    label: JPMorgan Chase
+    base: https://jpmc.fa.oraclecloud.com
+    site: CX_1
+    location: India
+    max_per_query: 200
+    queries: [software engineer, cybersecurity]
+
+  - kind: eightfold
+    label: Netflix
+    base: https://explore.jobs.netflix.net
+    domain: netflix.com
+    max_per_query: 100
+    queries: [software engineer, security engineer]
+
+# Workday tenants, all probe-verified. Descriptions are not in the list response, so
+# these score on title + location alone and sit lower than boards with full JDs.
+workday:
+  - {ats: workday, host: nvidia.wd5, tenant: nvidia, site: NVIDIAExternalCareerSite, label: NVIDIA}
+  - {ats: workday, host: salesforce.wd12, tenant: salesforce, site: External_Career_Site, label: Salesforce}
+  - {ats: workday, host: adobe.wd5, tenant: adobe, site: external_experienced, label: Adobe}
+  - {ats: workday, host: ms.wd5, tenant: ms, site: External, label: Morgan Stanley}
+  - {ats: workday, host: citi.wd5, tenant: citi, site: "2", label: Citi}
+  - {ats: workday, host: db.wd3, tenant: db, site: DBWebsite, label: Deutsche Bank}
+  - {ats: workday, host: blackrock.wd1, tenant: blackrock, site: BlackRock_Professional, label: BlackRock}
+  - {ats: workday, host: paypal.wd1, tenant: paypal, site: jobs, label: PayPal}
+
+# ---------------------------------------------------------------- linkedin creators
+# People who reliably post Indian SDE/security openings. Needs a cookie or Apify.
+linkedin_creators:
+  - https://www.linkedin.com/in/debugwithshubham/
+  - https://www.linkedin.com/in/himanshu-mangla-himangla/
+  - https://www.linkedin.com/in/gursimarsm/
+  - https://www.linkedin.com/in/dhingra-akshay/
+  - https://www.linkedin.com/in/krishan9350/
+  - https://www.linkedin.com/in/manalimange/
+  - https://www.linkedin.com/in/prakash-iyer-b318b817/
+  - https://www.linkedin.com/in/shivam-chawla01/
+  - https://www.linkedin.com/in/nikhilgupta1997/
+  - https://www.linkedin.com/in/srilekha-chowdary-4b245a190/
+  - https://www.linkedin.com/in/abhishekrai2304/
+  - https://www.linkedin.com/in/nishantkalkhanda/
+  - https://www.linkedin.com/in/neha-jain-279b80118/
+  - https://www.linkedin.com/in/aditya-chourasiya-4aa111249/
+  - https://www.linkedin.com/in/aarya123/
+  - https://www.linkedin.com/in/arungoel0810/
+  - https://www.linkedin.com/in/adityajamwal02/
+  - https://www.linkedin.com/in/sakshi-parmar-b320b0178/
+  - https://www.linkedin.com/in/rishavchoudhary081/
+  - https://www.linkedin.com/in/akshat-jain-iit/
+
+# Extra board files merged into `companies` at load time (YC discovery writes here).
+include_company_files:
+  - data/yc_boards.yaml
+  - data/tier_boards.yaml
+
+# ---------------------------------------------------------------- company boards
+# Verified live by tools/probe_boards.py — every slug below returned real postings.
+# Re-run that script to prune dead boards or add new companies.
+
+companies:
+  # security-first companies (closest to the Rippling experience)
+  - {ats: greenhouse, slug: cloudflare}
+  - {ats: greenhouse, slug: okta}
+  - {ats: greenhouse, slug: zscaler}
+  - {ats: greenhouse, slug: netskope}
+  - {ats: greenhouse, slug: rubrik}
+  - {ats: greenhouse, slug: druva}
+  - {ats: greenhouse, slug: chainguard}
+  - {ats: greenhouse, slug: bugcrowd}
+  - {ats: greenhouse, slug: orcasecurity}
+  - {ats: greenhouse, slug: verkada}
+  - {ats: greenhouse, slug: checkr}
+  - {ats: ashby, slug: hackerone}
+  - {ats: ashby, slug: semgrep}
+  - {ats: ashby, slug: 1password}
+  - {ats: lever, slug: jumpcloud}
+
+  # big product engineering
+  - {ats: greenhouse, slug: databricks}
+  - {ats: greenhouse, slug: stripe}
+  - {ats: greenhouse, slug: datadog}
+  - {ats: greenhouse, slug: mongodb}
+  - {ats: greenhouse, slug: elastic}
+  - {ats: greenhouse, slug: samsara}
+  - {ats: greenhouse, slug: gitlab}
+  - {ats: greenhouse, slug: twilio}
+  - {ats: greenhouse, slug: airbnb}
+  - {ats: greenhouse, slug: figma}
+  - {ats: greenhouse, slug: coinbase}
+  - {ats: greenhouse, slug: lyft}
+  - {ats: greenhouse, slug: pinterest}
+  - {ats: greenhouse, slug: reddit}
+  - {ats: greenhouse, slug: discord}
+  - {ats: greenhouse, slug: dropbox}
+  - {ats: greenhouse, slug: robinhood}
+  - {ats: greenhouse, slug: affirm}
+  - {ats: greenhouse, slug: instacart}
+  - {ats: greenhouse, slug: flexport}
+  - {ats: greenhouse, slug: gusto}
+  - {ats: greenhouse, slug: chime}
+  - {ats: greenhouse, slug: squarespace}
+  - {ats: greenhouse, slug: udemy}
+  - {ats: greenhouse, slug: netlify}
+  - {ats: greenhouse, slug: vercel}
+  - {ats: greenhouse, slug: workato}
+  - {ats: greenhouse, slug: scaleai}
+  - {ats: greenhouse, slug: remotecom}
+  - {ats: greenhouse, slug: brex}
+  - {ats: ashby, slug: ramp}
+  - {ats: ashby, slug: plaid}
+  - {ats: ashby, slug: notion}
+  - {ats: ashby, slug: linear}
+  - {ats: ashby, slug: supabase}
+  - {ats: ashby, slug: confluent}
+  - {ats: ashby, slug: benchling}
+
+  # AI labs / high-bar startups
+  - {ats: greenhouse, slug: anthropic}
+  - {ats: ashby, slug: openai}
+  - {ats: ashby, slug: cursor}
+  - {ats: ashby, slug: perplexity}
+  - {ats: ashby, slug: sierra}
+  - {ats: ashby, slug: harvey}
+  - {ats: ashby, slug: decagon}
+  - {ats: ashby, slug: abridge}
+  - {ats: ashby, slug: openevidence}
+  - {ats: ashby, slug: mercor}
+
+  # India-headquartered
+  - {ats: greenhouse, slug: postman}
+  - {ats: greenhouse, slug: phonepe}
+  - {ats: greenhouse, slug: groww}
+  - {ats: greenhouse, slug: slice}
+  - {ats: lever, slug: meesho}
+  - {ats: lever, slug: zeta}
+  - {ats: lever, slug: cred}
+  - {ats: lever, slug: porter}
+  - {ats: lever, slug: hevodata}
+  - {ats: ashby, slug: navi}
+  - {ats: ashby, slug: atlan}
+  - {ats: ashby, slug: sarvam}

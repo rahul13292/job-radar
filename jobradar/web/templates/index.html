@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block filters %}
+<form class="row" method="get" action="/" style="margin-top:11px">
+  <input type="text" name="q" value="{{ q }}" placeholder="🔎 search role, company, JD…" style="width:250px">
+  <label class="meta">min score
+    <input type="number" name="min_score" value="{{ floor|int }}" step="5" style="width:78px">
+  </label>
+  <select name="status">
+    {% for s, lbl in [('new','to review'),('saved','saved 💛'),('applied','applied ✅'),('dismissed','hidden'),('','everything')] %}
+    <option value="{{ s }}" {{ 'selected' if status==s }}>{{ lbl }}</option>
+    {% endfor %}
+  </select>
+  <select name="source">
+    <option value="">all sources</option>
+    {% for s in sources %}<option value="{{ s }}" {{ 'selected' if source==s }}>{{ s }}</option>{% endfor %}
+  </select>
+  <select name="sort">
+    {% for s, lbl in [('score','best match'),('new','newly found'),('posted','newest posted')] %}
+    <option value="{{ s }}" {{ 'selected' if sort==s }}>{{ lbl }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Filter</button>
+  <span class="meta">{{ rows|length }} shown</span>
+</form>
+{% endblock %}
+
+{% block body %}
+{% if not rows %}
+  <p class="empty"><span class="big">🍪</span>
+  Nothing here yet. Lower the min score, or tap <b>✨ Find jobs</b>.</p>
+{% endif %}
+
+{% for r in rows %}
+<div class="card">
+  <div class="top">
+    <div class="score {{ 's-hi' if r['score']>=70 else ('s-mid' if r['score']>=55 else 's-lo') }}">{{ r['score']|int }}</div>
+    <div style="flex:1; min-width:0">
+      <h3><a href="{{ r['url'] }}" target="_blank" rel="noopener">{{ r['title'] }}</a></h3>
+      <div class="meta">
+        <b>{{ r['company'] }}</b>
+        · {{ r['location'] or ('Remote' if r['remote'] else '—') }}
+        · {{ r['source'] }}
+        {% if r['posted_at'] %} · posted {{ r['posted_at'][:10] }}{% endif %}
+        {% if r['status'] != 'new' %} · <span class="pill">{{ r['status'] }}</span>{% endif %}
+      </div>
+      <ul class="why">
+        {% for why in reasons(r)[:5] %}<li>{{ why }}</li>{% endfor %}
+      </ul>
+    </div>
+    <div class="acts">
+      {% for label, val, cls in [('💛 Save','saved','save'), ('✅ Applied','applied','applied'), ('Hide','dismissed','hide')] %}
+      <form class="inline" method="post" action="/mark">
+        <input type="hidden" name="table" value="jobs">
+        <input type="hidden" name="fingerprint" value="{{ r['fingerprint'] }}">
+        <input type="hidden" name="status" value="{{ val }}">
+        <input type="hidden" name="back" value="{{ request.url.path }}?{{ request.url.query }}">
+        <button class="{{ cls }}" type="submit">{{ label }}</button>
+      </form>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

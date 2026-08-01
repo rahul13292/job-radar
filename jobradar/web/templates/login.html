@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Radar 🧸</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧸</text></svg>">
+<style>
+  :root { --bg:#FFF6EE; --panel:#fff; --line:#F2DCC9; --txt:#4A3428; --dim:#9A8271;
+          --blush:#F7B6A8; --bear:#C68B59; --bear-dk:#8A5A34; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#241C18; --panel:#31261F; --line:#463629; --txt:#F6E7DA; --dim:#B49B87; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg);
+         color:var(--txt); font:15px/1.6 ui-rounded,"SF Pro Rounded","Nunito",
+         -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+         background-image:
+           radial-gradient(circle at 16% 18%, rgba(247,182,168,.22) 0 7%, transparent 8%),
+           radial-gradient(circle at 84% 82%, rgba(168,216,196,.22) 0 6%, transparent 7%); }
+  .box { background:var(--panel); border:2px solid var(--line); border-radius:26px;
+         padding:34px 32px; width:min(360px, 92vw); text-align:center;
+         box-shadow:0 3px 0 var(--line), 0 16px 34px rgba(160,120,90,.14); }
+  h1 { font-size:20px; margin:14px 0 4px; font-weight:800; }
+  p { color:var(--dim); font-size:13.5px; margin:0 0 20px; }
+  input { font:inherit; width:100%; padding:11px 16px; border-radius:999px;
+          border:2px solid var(--line); background:var(--bg); color:var(--txt);
+          text-align:center; }
+  input:focus { outline:none; border-color:var(--blush); }
+  button { font:inherit; font-weight:800; width:100%; margin-top:12px; padding:11px;
+           border-radius:999px; border:2px solid #E79A8A; background:var(--blush);
+           color:#5A2A20; cursor:pointer; box-shadow:0 3px 0 #E79A8A; }
+  button:active { transform:translateY(2px); box-shadow:none; }
+  .bad { color:#C4544B; font-size:13px; margin-top:12px; font-weight:600; }
+  .m { width:64px; height:64px; position:relative; margin:0 auto; }
+  .m .head { position:absolute; inset:7px 0 0 0; border-radius:50%; background:var(--bear); }
+  .m .ear { position:absolute; width:22px; height:22px; border-radius:50%;
+            background:var(--bear-dk); top:0; }
+  .m .ear.l{left:2px;} .m .ear.r{right:2px;}
+  .m .snout { position:absolute; width:21px; height:15px; border-radius:50%;
+              background:#FFF1E4; left:22px; top:39px; }
+  .m .eye { position:absolute; width:6px; height:8px; border-radius:50%;
+            background:#3A2418; top:32px; }
+  .m .eye.l{left:19px;} .m .eye.r{right:19px;}
+  .m .cheek { position:absolute; width:10px; height:6px; border-radius:50%;
+              background:var(--blush); top:41px; }
+  .m .cheek.l{left:10px;} .m .cheek.r{right:10px;}
+</style>
+</head>
+<body>
+  <form class="box" method="post" action="/login">
+    <div class="m"><span class="ear l"></span><span class="ear r"></span><span class="head"></span>
+      <span class="snout"></span><span class="cheek l"></span><span class="cheek r"></span>
+      <span class="eye l"></span><span class="eye r"></span></div>
+    <h1>Job Radar</h1>
+    <p>welcome back, Diya 🌷</p>
+    <input type="password" name="password" placeholder="password" autofocus required>
+    <button type="submit">Let me in ✨</button>
+    {% if bad %}<div class="bad">hmm, that's not it 🥲 try again</div>{% endif %}
+  </form>
+</body>
+</html>
