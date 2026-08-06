@@ -27,6 +27,33 @@ companies:
   slug: mantis
   label: Mantis
 - ats: ashby
+  slug: moss
+  label: Moss
+- ats: ashby
+  slug: diligencesquared
+  label: DiligenceSquared
+- ats: greenhouse
+  slug: icarus
+  label: Icarus
+- ats: ashby
+  slug: sf-tensor
+  label: SF Tensor
+- ats: ashby
+  slug: hypercubic
+  label: Hypercubic
+- ats: ashby
+  slug: cranston
+  label: Cranston AI
+- ats: ashby
+  slug: hyperspell
+  label: Hyperspell
+- ats: ashby
+  slug: bolna
+  label: Bolna AI
+- ats: ashby
+  slug: uplane
+  label: Uplane
+- ats: ashby
   slug: nox-metals
   label: Nox Metals
 - ats: greenhouse
@@ -84,6 +111,9 @@ companies:
   slug: dedalus-labs
   label: Dedalus Labs
 - ats: ashby
+  slug: prox
+  label: Prox
+- ats: ashby
   slug: ambral
   label: Ambral
 - ats: ashby
@@ -134,3 +164,393 @@ companies:
 - ats: ashby
   slug: reviserobotics
   label: Revise Robotics
+- ats: ashby
+  slug: apolink
+  label: Apolink
+- ats: ashby
+  slug: ryvn
+  label: Ryvn
+- ats: ashby
+  slug: innate
+  label: Innate
+- ats: ashby
+  slug: capy
+  label: Capy
+- ats: ashby
+  slug: abundant
+  label: Abundant
+- ats: lever
+  slug: unusual
+  label: Unusual
+- ats: ashby
+  slug: ctgt
+  label: CTGT
+- ats: ashby
+  slug: telli
+  label: telli
+- ats: ashby
+  slug: conductor
+  label: Conductor
+- ats: ashby
+  slug: usul
+  label: Usul
+- ats: ashby
+  slug: dataleap
+  label: Dataleap
+- ats: ashby
+  slug: simple-ai
+  label: Simple AI
+- ats: ashby
+  slug: thundercompute
+  label: Thunder Compute
+- ats: ashby
+  slug: zeit-ai
+  label: Zeit AI
+- ats: ashby
+  slug: david-ai
+  label: David AI
+- ats: ashby
+  slug: anara
+  label: Anara
+- ats: ashby
+  slug: finny
+  label: FINNY AI
+- ats: ashby
+  slug: saturn
+  label: Saturn
+- ats: ashby
+  slug: clearly-ai
+  label: Clearly AI
+- ats: ashby
+  slug: conveo
+  label: Conveo
+- ats: ashby
+  slug: kastle
+  label: Kastle
+- ats: ashby
+  slug: anthrogen
+  label: Anthrogen
+- ats: ashby
+  slug: substrate
+  label: Substrate
+- ats: greenhouse
+  slug: pulse
+  label: Pulse
+- ats: ashby
+  slug: corgi
+  label: Corgi Insurance
+- ats: ashby
+  slug: phonely
+  label: Phonely
+- ats: ashby
+  slug: sagecare
+  label: Sage Care
+- ats: ashby
+  slug: codes-health
+  label: Codes Health
+- ats: ashby
+  slug: claimsorted
+  label: ClaimSorted
+- ats: greenhouse
+  slug: spaceium
+  label: Spaceium Inc
+- ats: ashby
+  slug: mem0
+  label: Mem0
+- ats: ashby
+  slug: domu
+  label: Domu Technology Inc.
+- ats: ashby
+  slug: ultra
+  label: Ultra
+- ats: ashby
+  slug: blacksmith
+  label: Blacksmith
+- ats: ashby
+  slug: spur
+  label: Spur
+- ats: ashby
+  slug: commodityai
+  label: CommodityAI
+- ats: ashby
+  slug: retell-ai
+  label: Retell AI
+- ats: ashby
+  slug: brainbaselabs
+  label: Brainbase Labs
+- ats: ashby
+  slug: artosai
+  label: Artos
+- ats: ashby
+  slug: circleback
+  label: Circleback
+- ats: ashby
+  slug: opencall
+  label: Opencall
+- ats: ashby
+  slug: offdeal
+  label: OffDeal
+- ats: ashby
+  slug: conduit
+  label: Conduit
+- ats: ashby
+  slug: astro-mechanica
+  label: Astro Mechanica
+- ats: ashby
+  slug: centralize
+  label: Centralize
+- ats: ashby
+  slug: tamarindbio
+  label: Tamarind Bio
+- ats: ashby
+  slug: clarion
+  label: Clarion
+- ats: ashby
+  slug: greenboard
+  label: Greenboard
+- ats: ashby
+  slug: artisan
+  label: Artisan
+- ats: ashby
+  slug: furtherai
+  label: FurtherAI
+- ats: ashby
+  slug: arini
+  label: Arini
+- ats: greenhouse
+  slug: paradigm
+  label: Paradigm
+- ats: ashby
+  slug: pointone
+  label: PointOne
+- ats: ashby
+  slug: pivotrobotics
+  label: Pivot Robotics
+- ats: ashby
+  slug: garage
+  label: Garage
+- ats: greenhouse
+  slug: newton
+  label: Newton
+- ats: ashby
+  slug: tuesday-labs
+  label: Tuesday Labs
+- ats: greenhouse
+  slug: momentic
+  label: Momentic
+- ats: ashby
+  slug: reducto
+  label: Reducto
+- ats: ashby
+  slug: tekton-dynamics
+  label: Tekton Dynamics
+- ats: ashby
+  slug: legora
+  label: Legora
+- ats: greenhouse
+  slug: navierai
+  label: Navier AI
+- ats: ashby
+  slug: onyx
+  label: Onyx
+- ats: greenhouse
+  slug: flex
+  label: Flex
+- ats: ashby
+  slug: healthtech-1
+  label: Healthtech 1
+- ats: greenhouse
+  slug: feanixbiotechnologies
+  label: Feanix Biotechnologies
+- ats: greenhouse
+  slug: tempo
+  label: Tempo
+- ats: ashby
+  slug: shadeform
+  label: Shadeform
+- ats: ashby
+  slug: pure
+  label: Pure
+- ats: ashby
+  slug: langdock
+  label: Langdock
+- ats: ashby
+  slug: sweep
+  label: Sweep
+- ats: ashby
+  slug: safetykit
+  label: SafetyKit
+- ats: ashby
+  slug: sola
+  label: Sola
+- ats: ashby
+  slug: flint
+  label: Flint
+- ats: ashby
+  slug: empirical
+  label: Empirical Health
+- ats: ashby
+  slug: fortuna-health
+  label: Fortuna Health
+- ats: ashby
+  slug: brettonai
+  label: Bretton AI
+- ats: ashby
+  slug: decodahealth
+  label: Decoda Health
+- ats: ashby
+  slug: fleetworks
+  label: FleetWorks
+- ats: ashby
+  slug: outset
+  label: Outset
+- ats: ashby
+  slug: terminal
+  label: Terminal
+- ats: ashby
+  slug: campfire
+  label: Campfire
+- ats: ashby
+  slug: capimoney
+  label: Capi Money
+- ats: ashby
+  slug: subsets
+  label: Subsets
+- ats: ashby
+  slug: airgoods
+  label: Airgoods
+- ats: ashby
+  slug: solveintelligence
+  label: Solve Intelligence
+- ats: ashby
+  slug: electricair
+  label: Electric Air
+- ats: lever
+  slug: prosper
+  label: Prosper
+- ats: ashby
+  slug: casca
+  label: Casca
+- ats: greenhouse
+  slug: diligent
+  label: Diligent
+- ats: ashby
+  slug: bland
+  label: Bland AI
+- ats: ashby
+  slug: hyperbound
+  label: Hyperbound
+- ats: ashby
+  slug: elyos
+  label: Elyos AI
+- ats: ashby
+  slug: twenty
+  label: Twenty
+- ats: ashby
+  slug: artie
+  label: Artie
+- ats: ashby
+  slug: hockeystack
+  label: HockeyStack
+- ats: ashby
+  slug: automat
+  label: Automat
+- ats: ashby
+  slug: litellm
+  label: LiteLLM
+- ats: ashby
+  slug: escape
+  label: Escape
+- ats: ashby
+  slug: metal
+  label: Metal
+- ats: ashby
+  slug: vector
+  label: Vector
+- ats: ashby
+  slug: finni-health
+  label: Finni Health
+- ats: ashby
+  slug: conduit
+  label: Conduit
+- ats: ashby
+  slug: invopop
+  label: Invopop
+- ats: ashby
+  slug: pylon
+  label: Pylon
+- ats: ashby
+  slug: loula
+  label: Loula
+- ats: ashby
+  slug: vitalize
+  label: Vitalize
+- ats: ashby
+  slug: inkeep
+  label: Inkeep
+- ats: ashby
+  slug: relace
+  label: Relace
+- ats: ashby
+  slug: kivo-health
+  label: Kivo Health
+- ats: greenhouse
+  slug: haven
+  label: Haven
+- ats: lever
+  slug: suger
+  label: Suger
+- ats: ashby
+  slug: cosine
+  label: Cosine
+- ats: ashby
+  slug: pirros
+  label: Pirros
+- ats: ashby
+  slug: vooma
+  label: Vooma
+- ats: ashby
+  slug: coperniq
+  label: Coperniq
+- ats: ashby
+  slug: goveagle
+  label: GovEagle
+- ats: ashby
+  slug: tennr
+  label: Tennr
+- ats: ashby
+  slug: salient
+  label: Salient
+- ats: ashby
+  slug: numeral
+  label: Numeral
+- ats: ashby
+  slug: nango
+  label: Nango
+- ats: ashby
+  slug: latent
+  label: Latent
+- ats: ashby
+  slug: concourse
+  label: Concourse
+- ats: ashby
+  slug: rollstack
+  label: Rollstack
+- ats: ashby
+  slug: magicpatterns
+  label: Magic Patterns
+- ats: ashby
+  slug: credal
+  label: Credal.ai
+- ats: greenhouse
+  slug: reflex
+  label: Reflex
+- ats: ashby
+  slug: finvest
+  label: Finvest
+- ats: ashby
+  slug: infisical
+  label: Infisical
+- ats: ashby
+  slug: avoca
+  label: Avoca

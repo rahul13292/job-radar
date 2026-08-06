@@ -223,6 +223,37 @@ def cmd_export(args, cfg) -> None:
     print(f"wrote {len(rows)} rows to {out}")
 
 
+def cmd_outreach(args, cfg) -> None:
+    """Cold email + LinkedIn DM drafts for the top matches."""
+    from .outreach import build
+
+    prof = _profile(cfg)
+    store = Store(cfg["db_path"])
+    rows = store.jobs(min_score=args.min_score, status=args.status or "", limit=args.limit)
+    if not rows:
+        print("nothing above that score — try --min-score 55")
+        return
+
+    jobs = [dict(r) for r in rows]
+    drafts = build(jobs, prof, cfg["_root"])
+
+    if args.json:
+        print(json.dumps(drafts, indent=1))
+        return
+
+    for d in drafts:
+        print("=" * 78)
+        print(f"{int(d['score'] or 0)}  {d['title']}  —  {d['company']}")
+        print(f"    {d['url']}")
+        if d["email"]["hook"]:
+            print(f"    funding hook: {d['email']['hook'][:70]}")
+        print(f"\n--- EMAIL — subject: {d['email']['subject']}\n")
+        print(d["email"]["body"])
+        print(f"\n--- LINKEDIN DM ({d['dm']['chars']}/300 chars)\n")
+        print(d["dm"]["body"])
+        print()
+
+
 def cmd_web(args, cfg) -> None:
     import uvicorn
     from .scheduler import start as start_scheduler
@@ -275,6 +306,13 @@ def main(argv=None) -> None:
     p.add_argument("--out", default="jobs.csv")
     p.add_argument("--min-score", type=float, default=40)
     p.set_defaults(fn=cmd_export)
+
+    p = sub.add_parser("outreach", help="cold email + LinkedIn DM drafts for top matches")
+    p.add_argument("--min-score", type=float, default=65)
+    p.add_argument("--status", default="")
+    p.add_argument("--limit", type=int, default=10)
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(fn=cmd_outreach)
 
     p = sub.add_parser("web", help="run the dashboard")
     p.add_argument("--host", default="127.0.0.1")

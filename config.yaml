@@ -337,6 +337,7 @@ linkedin_creators:
 include_company_files:
   - data/yc_boards.yaml
   - data/tier_boards.yaml
+  - data/funded_boards.yaml
 
 # ---------------------------------------------------------------- company boards
 # Verified live by tools/probe_boards.py — every slug below returned real postings.

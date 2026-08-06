@@ -64,7 +64,8 @@ scored **91** — perfect on every other signal, and closed to her.
 | **JPMorgan Chase** | none | Oracle Recruiting Cloud (7,279 roles; 122 India SWE) |
 | **Workday** | none | NVIDIA, Salesforce, Adobe, Morgan Stanley, Citi, Deutsche Bank, BlackRock, PayPal |
 | **Netflix** | none | Eightfold-hosted careers API |
-| **YC startups** | none | 45 boards auto-discovered from YC's API, refreshed weekly |
+| **YC startups** | none | **185 boards** auto-discovered across every batch W23-W27 (683 hiring companies probed), refreshed weekly |
+| **Recently funded** | none | Funding RSS (TechCrunch, Inc42, YourStory, Entrackr, ET Tech) -> company -> verified board; the funding events themselves become outreach hooks |
 | **Quant / trading** | none | IMC, WorldQuant, Tower Research via LinkedIn feed |
 | **RemoteOK** | none | global remote |
 | **HN "Who is hiring"** | none | current month's thread |
@@ -121,6 +122,7 @@ CSS-drawn bear and panda mascots (original shapes, not the copyrighted character
 
 ```bash
 jobradar init --resume FILE.pdf     # resume PDF -> profile.json (hand-editable)
+jobradar outreach --min-score 65    # cold email + LinkedIn DM drafts for top matches
 jobradar run [--only SOURCE]        # scrape, score, store
 jobradar rescore                    # re-grade stored rows after a config change
 jobradar list --min-score 65 -v     # top matches in the terminal, with reasons
@@ -140,6 +142,7 @@ tools/resolve_linkedin_companies.py # resolve + VERIFY LinkedIn company IDs
 tools/refresh_yc.py                 # rediscover hiring YC startups (run weekly)
 tools/resume_gap.py                 # what the collected JDs ask for that her resume lacks
 tools/probe_bigco.py                # re-probe the direct career APIs
+tools/refresh_funded.py             # recently-funded startups + outreach hooks (run weekly)
 ```
 
 `resolve_linkedin_companies.py` verifies every ID by running a real search and checking

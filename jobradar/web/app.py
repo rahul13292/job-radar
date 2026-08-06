@@ -119,6 +119,18 @@ def create_app(cfg: dict) -> FastAPI:
         ctx.update({"applied": applied, "saved": saved, "reasons": reasons})
         return templates.TemplateResponse(request, "tracker.html", ctx)
 
+    @app.get("/outreach", response_class=HTMLResponse)
+    def outreach(request: Request, min_score: float = 62, status: str = "", limit: int = 25):
+        from ..outreach import build
+        from ..resume import load_profile
+
+        rows = store.jobs(min_score=min_score, status=status or "", limit=limit)
+        profile = load_profile(cfg["profile_path"])
+        drafts = build([dict(r) for r in rows], profile, cfg["_root"])
+        ctx = base_ctx("outreach")
+        ctx.update({"drafts": drafts, "floor": min_score, "status": status})
+        return templates.TemplateResponse(request, "outreach.html", ctx)
+
     # ---------------------------------------------------------------- actions
 
     @app.post("/mark")
