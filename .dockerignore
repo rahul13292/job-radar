@@ -8,3 +8,5 @@ data/profile.json
 *.csv
 README.md
 DEPLOY.md
+*.pdf
+assets/

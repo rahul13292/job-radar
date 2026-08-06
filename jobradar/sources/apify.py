@@ -55,9 +55,11 @@ def _tokens() -> List[str]:
     toks = [t.strip() for t in raw.split(",") if t.strip()]
     if toks:
         return toks
-    shared = Path(os.getenv("APIFY_TOKEN_FILE",
-                            "/Users/rahul/arrai-n8n-mcp/cold-email-rig/.env"))
-    if shared.exists():
+    # Optional shared token file, path supplied by env only — never hardcoded, so the
+    # repo doesn't advertise where a token file lives on someone's machine.
+    token_file = os.getenv("APIFY_TOKEN_FILE", "")
+    shared = Path(token_file) if token_file else None
+    if shared and shared.exists():
         m = re.search(r"APIFY_TOKENS?=(.+)", shared.read_text())
         if m:
             return [t.strip() for t in m.group(1).split(",") if t.strip()]
