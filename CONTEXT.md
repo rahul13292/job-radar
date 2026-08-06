@@ -166,21 +166,35 @@ Read the current values with `railway variables --service job-radar`.
 
 ---
 
-## Security review (2026-08-05)
+## Security review + PII incident (2026-08-05/06)
 
-Scanned every blob in every commit. **No keys, tokens, or passwords have ever been
-committed.** `.env`, `jobs.db`, `profile.json` are gitignored and clean.
+**No keys, tokens, or passwords have ever been committed** — verified across every blob
+in every commit. `.env`, `jobs.db`, `profile.json` are gitignored and clean.
 
-**This repo must stay private**, because of personal data, not secrets:
-- `assets/resume.pdf` — Diya's full resume: phone, email, city. Baked into the Docker
-  build, so it can't simply be deleted from HEAD.
-- `.env.example` — her real email in `DIGEST_TO`
-- `config.yaml` — 20 named real people's LinkedIn profiles (the tracked creators)
-- `jobradar/sources/apify.py` — hardcoded local path pointing at the Apify token file
+**But the repo was accidentally PUBLIC for ~4 days** (Aug 1 18:06Z → Aug 5) with
+`assets/resume.pdf` committed, exposing Diya's phone, email and city. `gh repo create
+--private` did not take, and the visibility was never verified afterwards. GitHub
+traffic recorded **17 unique cloners** against 0 stars/watchers — the signature of
+automated firehose scrapers. 0 forks, so nothing persisted on GitHub itself.
 
-To ever make it public: `git filter-repo` the PDF out of history, switch the resume to
-a runtime volume mount, scrub `.env.example`, move the creator list to a user-supplied
-file, fix the hardcoded path.
+**Always verify after creating a repo:**
+```bash
+gh repo view <owner>/<repo> --json visibility,isPrivate
+```
+
+Remediated Aug 6, verified from a fresh clone off GitHub — **0 PII, 0 PDFs, 0 secrets
+in the entire history**:
+- `git filter-repo --path assets/resume.pdf --invert-paths` — PDF gone from history
+- `git filter-repo --replace-text` — her email/phone scrubbed from old `.env.example`
+  blobs. Path-based filtering alone misses these, and `git gc --prune=now` is required
+  or dangling pre-rewrite objects still hold the data.
+- The container now seeds from `data/profile.template.json` — skills and target_titles
+  only, since the scorer never reads name/email/phone. **The resume is no longer in the
+  repo or the image.** The local copy lives at gitignored `data/Diya_Singh_SWE.pdf`.
+- `apify.py` hardcoded path → `APIFY_TOKEN_FILE` env
+- `*.pdf` and `assets/` blocked in `.dockerignore` / `.railwayignore`
+
+**Keep it private anyway:** `config.yaml` names 20 real people's LinkedIn profiles.
 
 ---
 
