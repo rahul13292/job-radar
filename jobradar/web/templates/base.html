@@ -174,7 +174,6 @@
     <nav>
       <a href="/" class="{{ 'on' if tab=='jobs' }}">Roles</a>
       <a href="/posts" class="{{ 'on' if tab=='posts' }}">Hiring posts</a>
-      <a href="/outreach" class="{{ 'on' if tab=='outreach' }}">Outreach</a>
       <a href="/tracker" class="{{ 'on' if tab=='tracker' }}">Tracker</a>
     </nav>
     <span class="pill"><b>{{ counts.jobs }}</b> roles</span>
@@ -182,6 +181,13 @@
     <span class="pill">💛 <b>{{ counts.saved }}</b></span>
     <span class="pill">✅ <b>{{ counts.applied }}</b></span>
     <div class="row" style="margin-left:auto; gap:7px">
+      <form class="inline" method="post" action="/upload-cv" enctype="multipart/form-data" id="cvform">
+        <label class="btn" style="cursor:pointer" title="active CV: {{ cv.name }} ({{ cv.skills }} skills)">
+          📄 {{ cv.name[:22] }}{{ '…' if cv.name|length > 22 }} · upload new
+          <input type="file" name="cv" accept="application/pdf" style="display:none"
+                 onchange="document.getElementById('cvform').submit()">
+        </label>
+      </form>
       <a class="btn" href="/export.xlsx">⬇︎ Excel</a>
       <form class="inline" method="post" action="/refresh">
         <input type="hidden" name="back" value="{{ request.url.path }}">

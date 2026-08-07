@@ -122,7 +122,6 @@ CSS-drawn bear and panda mascots (original shapes, not the copyrighted character
 
 ```bash
 jobradar init --resume FILE.pdf     # resume PDF -> profile.json (hand-editable)
-jobradar outreach --min-score 65    # cold email + LinkedIn DM drafts for top matches
 jobradar run [--only SOURCE]        # scrape, score, store
 jobradar rescore                    # re-grade stored rows after a config change
 jobradar list --min-score 65 -v     # top matches in the terminal, with reasons

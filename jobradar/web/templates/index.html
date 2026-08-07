@@ -20,6 +20,13 @@
     <option value="{{ s }}" {{ 'selected' if sort==s }}>{{ lbl }}</option>
     {% endfor %}
   </select>
+  <label class="meta">exp
+    <select name="max_exp">
+      {% for v, lbl in [('0','0 yrs only'),('1','≤ 1 yr'),('2','≤ 2 yrs'),('any','any')] %}
+      <option value="{{ v }}" {{ 'selected' if max_exp==v }}>{{ lbl }}</option>
+      {% endfor %}
+    </select>
+  </label>
   <button type="submit">Filter</button>
   <span class="meta">{{ rows|length }} shown</span>
 </form>
@@ -40,6 +47,7 @@
       <div class="meta">
         <b>{{ r['company'] }}</b>
         · {{ r['location'] or ('Remote' if r['remote'] else '—') }}
+        · {% if r['years_req'] is not none %}<b>exp: {{ r['years_req'] }}y</b>{% else %}exp: ?{% endif %}
         · {{ r['source'] }}
         {% if r['posted_at'] %} · posted {{ r['posted_at'][:10] }}{% endif %}
         {% if r['status'] != 'new' %} · <span class="pill">{{ r['status'] }}</span>{% endif %}

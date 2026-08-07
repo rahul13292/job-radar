@@ -110,6 +110,14 @@ def cmd_run(args, cfg) -> None:
         store.log_run(name, started, len(found), new)
         print(f"[{name}] {len(found)} scraped → {len(kept)} on-profile → {new} new")
 
+    # JD enrichment for LinkedIn rows that scored on title alone — this is what makes
+    # the experience gate real for the jobs she actually sees.
+    if not only or "linkedin_jobs" in only or "linkedin_companies" in only:
+        print("[enrich] fetching missing JDs for surfaced LinkedIn jobs…", flush=True)
+        tried, fetched, rejected = enrich_linkedin(store, prof, cfg)
+        print(f"[enrich] {tried} candidates → {fetched} JDs fetched → "
+              f"{rejected} rejected as experienced-only")
+
     c = store.counts()
     print(f"\n{total_new} new this run. Library: {c['jobs']} roles ({c['new']} unreviewed, "
           f"{c['saved']} saved, {c['applied']} applied), {c['posts']} posts.")
@@ -117,12 +125,11 @@ def cmd_run(args, cfg) -> None:
 
 # --------------------------------------------------------------------------- rescore
 
-def cmd_rescore(args, cfg) -> None:
-    """Re-run scoring over everything already stored, after a config tweak."""
+def rescore_all(store: Store, prof: dict, cfg: dict) -> tuple:
+    """Re-grade every stored row against the current profile. Shared by the CLI and
+    the dashboard's CV-upload flow, so a new CV changes the recs in one pass."""
     from .sources.names import display
 
-    prof = _profile(cfg)
-    store = Store(cfg["db_path"])
     rows = store.conn.execute("SELECT * FROM jobs").fetchall()
     ats_sources = {"greenhouse", "lever", "ashby", "smartrecruiters", "workday"}
     changed = 0
@@ -139,8 +146,9 @@ def cmd_rescore(args, cfg) -> None:
         s, reasons = score_job(j, prof, cfg)
         if abs(s - (r["score"] or 0)) > 0.05:
             changed += 1
-        store.conn.execute("UPDATE jobs SET score=?, reasons=? WHERE fingerprint=?",
-                           (s, json.dumps(reasons), r["fingerprint"]))
+        store.conn.execute(
+            "UPDATE jobs SET score=?, reasons=?, years_req=? WHERE fingerprint=?",
+            (s, json.dumps(reasons), j.years_req, r["fingerprint"]))
 
     prows = store.conn.execute("SELECT * FROM posts").fetchall()
     for r in prows:
@@ -152,7 +160,66 @@ def cmd_rescore(args, cfg) -> None:
         store.conn.execute("UPDATE posts SET score=?, reasons=? WHERE fingerprint=?",
                            (s, json.dumps(reasons), r["fingerprint"]))
     store.conn.commit()
-    print(f"rescored {len(rows)} roles ({changed} changed) and {len(prows)} posts")
+    return len(rows), changed, len(prows)
+
+
+def cmd_rescore(args, cfg) -> None:
+    """Re-run scoring over everything already stored, after a config tweak."""
+    prof = _profile(cfg)
+    store = Store(cfg["db_path"])
+    n, changed, np = rescore_all(store, prof, cfg)
+    print(f"rescored {n} roles ({changed} changed) and {np} posts")
+
+
+# --------------------------------------------------------------------------- enrich
+
+def enrich_linkedin(store: Store, prof: dict, cfg: dict, cap: int = 150) -> tuple:
+    """Fetch full JDs for surfaced LinkedIn jobs that were scored on title alone.
+
+    This is the fix for 'sabmei exp rehta hai': 80% of shown LinkedIn jobs had no
+    description stored, so the years gate never fired on them. Only jobs above the
+    dashboard floor get fetched — enriching all 17k scraped rows would be thousands of
+    rate-limited requests for jobs nobody will ever see.
+    """
+    from .scoring import extract_years_req
+    from .sources import linkedin_jobs
+
+    rows = store.conn.execute(
+        "SELECT * FROM jobs WHERE source='linkedin_jobs' AND status='new' "
+        "AND score >= ? AND LENGTH(COALESCE(description,'')) < 100 "
+        "ORDER BY score DESC LIMIT ?",
+        (cfg.get("min_score_dashboard", 40), cap)).fetchall()
+
+    fetched = rejected = 0
+    for r in rows:
+        j = Job(source=r["source"], external_id=r["external_id"] or "", title=r["title"],
+                company=r["company"], location=r["location"] or "", url=r["url"] or "",
+                posted_at=r["posted_at"], remote=bool(r["remote"]))
+        linkedin_jobs.fetch_detail(j)
+        if len(j.description) < 100:
+            # LinkedIn wouldn't give the detail (rate limit / gone). Mark it tried so
+            # the next run doesn't burn its budget on the same rows.
+            store.conn.execute(
+                "UPDATE jobs SET description='(detail unavailable)' WHERE fingerprint=?",
+                (r["fingerprint"],))
+            continue
+        fetched += 1
+        s, reasons = score_job(j, prof, cfg)
+        if s == 0:
+            rejected += 1
+        store.conn.execute(
+            "UPDATE jobs SET description=?, score=?, reasons=?, years_req=? WHERE fingerprint=?",
+            (j.description[:20000], s, json.dumps(reasons), j.years_req, r["fingerprint"]))
+    store.conn.commit()
+    return len(rows), fetched, rejected
+
+
+def cmd_enrich(args, cfg) -> None:
+    prof = _profile(cfg)
+    store = Store(cfg["db_path"])
+    tried, fetched, rejected = enrich_linkedin(store, prof, cfg, cap=args.cap)
+    print(f"enrich: {tried} candidates, {fetched} JDs fetched, "
+          f"{rejected} turned out to need experience and were rejected")
 
 
 # --------------------------------------------------------------------------- list
@@ -223,37 +290,6 @@ def cmd_export(args, cfg) -> None:
     print(f"wrote {len(rows)} rows to {out}")
 
 
-def cmd_outreach(args, cfg) -> None:
-    """Cold email + LinkedIn DM drafts for the top matches."""
-    from .outreach import build
-
-    prof = _profile(cfg)
-    store = Store(cfg["db_path"])
-    rows = store.jobs(min_score=args.min_score, status=args.status or "", limit=args.limit)
-    if not rows:
-        print("nothing above that score — try --min-score 55")
-        return
-
-    jobs = [dict(r) for r in rows]
-    drafts = build(jobs, prof, cfg["_root"])
-
-    if args.json:
-        print(json.dumps(drafts, indent=1))
-        return
-
-    for d in drafts:
-        print("=" * 78)
-        print(f"{int(d['score'] or 0)}  {d['title']}  —  {d['company']}")
-        print(f"    {d['url']}")
-        if d["email"]["hook"]:
-            print(f"    funding hook: {d['email']['hook'][:70]}")
-        print(f"\n--- EMAIL — subject: {d['email']['subject']}\n")
-        print(d["email"]["body"])
-        print(f"\n--- LINKEDIN DM ({d['dm']['chars']}/300 chars)\n")
-        print(d["dm"]["body"])
-        print()
-
-
 def cmd_web(args, cfg) -> None:
     import uvicorn
     from .scheduler import start as start_scheduler
@@ -283,6 +319,10 @@ def main(argv=None) -> None:
     p = sub.add_parser("rescore", help="re-score stored rows after a config change")
     p.set_defaults(fn=cmd_rescore)
 
+    p = sub.add_parser("enrich", help="fetch missing JDs for surfaced LinkedIn jobs")
+    p.add_argument("--cap", type=int, default=150)
+    p.set_defaults(fn=cmd_enrich)
+
     p = sub.add_parser("list", help="top matches in the terminal")
     p.add_argument("--min-score", type=float, default=50)
     p.add_argument("--status", default="")
@@ -306,13 +346,6 @@ def main(argv=None) -> None:
     p.add_argument("--out", default="jobs.csv")
     p.add_argument("--min-score", type=float, default=40)
     p.set_defaults(fn=cmd_export)
-
-    p = sub.add_parser("outreach", help="cold email + LinkedIn DM drafts for top matches")
-    p.add_argument("--min-score", type=float, default=65)
-    p.add_argument("--status", default="")
-    p.add_argument("--limit", type=int, default=10)
-    p.add_argument("--json", action="store_true")
-    p.set_defaults(fn=cmd_outreach)
 
     p = sub.add_parser("web", help="run the dashboard")
     p.add_argument("--host", default="127.0.0.1")

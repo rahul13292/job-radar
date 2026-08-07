@@ -23,6 +23,7 @@ class Job:
     description: str = ""
     posted_at: Optional[str] = None      # ISO8601
     remote: bool = False
+    years_req: Optional[int] = None      # lowest stated experience bar; None = unstated
     raw_meta: dict = field(default_factory=dict)
 
     # filled in by the scorer

@@ -5,7 +5,7 @@ import json
 import sqlite3
 import threading
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 from .models import Job, Post, now_iso
 
@@ -86,6 +86,7 @@ class Store:
         for table, col, decl in (
             ("jobs", "status_at", "TEXT"),      # when she marked it applied/saved
             ("posts", "status_at", "TEXT"),
+            ("jobs", "years_req", "INTEGER"),   # stated experience bar; NULL = unstated
         ):
             cols = {r["name"] for r in self.conn.execute(f"PRAGMA table_info({table})")}
             if col not in cols:
@@ -103,17 +104,18 @@ class Store:
                     "SELECT fingerprint FROM jobs WHERE fingerprint=?", (j.fingerprint,))
                 if cur.fetchone():
                     self.conn.execute(
-                        "UPDATE jobs SET last_seen=?, score=?, reasons=? WHERE fingerprint=?",
-                        (ts, j.score, json.dumps(j.score_reasons), j.fingerprint),
+                        "UPDATE jobs SET last_seen=?, score=?, reasons=?, years_req=? "
+                        "WHERE fingerprint=?",
+                        (ts, j.score, json.dumps(j.score_reasons), j.years_req, j.fingerprint),
                     )
                     continue
                 self.conn.execute(
                     """INSERT INTO jobs (fingerprint, source, external_id, title, company, location,
-                                         url, description, posted_at, remote, score, reasons,
-                                         first_seen, last_seen)
-                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                                         url, description, posted_at, remote, years_req, score,
+                                         reasons, first_seen, last_seen)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                     (j.fingerprint, j.source, j.external_id, j.title, j.company, j.location, j.url,
-                     j.description[:20000], j.posted_at, int(j.remote), j.score,
+                     j.description[:20000], j.posted_at, int(j.remote), j.years_req, j.score,
                      json.dumps(j.score_reasons), ts, ts),
                 )
                 new += 1
@@ -183,7 +185,7 @@ class Store:
     # ---------- reads ----------
 
     def jobs(self, min_score: float = 0, status: str = "", limit: int = 200,
-             since: str = "", source: str = "") -> List[sqlite3.Row]:
+             since: str = "", source: str = "", max_exp: Optional[int] = None) -> List[sqlite3.Row]:
         q = "SELECT * FROM jobs WHERE score >= ?"
         args: list = [min_score]
         if status:
@@ -195,6 +197,11 @@ class Store:
         if source:
             q += " AND source = ?"
             args.append(source)
+        if max_exp is not None:
+            # NULL (unstated) stays visible but is labeled in the UI — a JD that names
+            # no bar is usually open to freshers, and hiding those would empty the board.
+            q += " AND (years_req IS NULL OR years_req <= ?)"
+            args.append(max_exp)
         q += " ORDER BY score DESC, first_seen DESC LIMIT ?"
         args.append(limit)
         return self.conn.execute(q, args).fetchall()

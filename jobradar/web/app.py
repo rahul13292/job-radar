@@ -8,8 +8,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, Form, Request, Response
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi import FastAPI, File, Form, Request, Response, UploadFile
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from ..db import Store
@@ -42,9 +42,19 @@ def create_app(cfg: dict) -> FastAPI:
         except Exception:
             return []
 
+    def active_cv() -> dict:
+        """Which CV drives the current recs — shown in the header, set by /upload-cv."""
+        try:
+            p = json.loads(Path(cfg["profile_path"]).read_text())
+            src = p.get("source_pdf") or ""
+            return {"name": Path(src).name if src else "profile template",
+                    "skills": len(p.get("skills", []))}
+        except Exception:
+            return {"name": "none", "skills": 0}
+
     def base_ctx(tab: str) -> dict:
         return {"counts": store.counts(), "runs": store.last_runs(8), "tab": tab,
-                "locked": auth.auth_required()}
+                "locked": auth.auth_required(), "cv": active_cv()}
 
     # ---------------------------------------------------------------- login
 
@@ -80,9 +90,13 @@ def create_app(cfg: dict) -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request, min_score: float = None, status: str = "new",
-              source: str = "", q: str = "", sort: str = "score"):
+              source: str = "", q: str = "", sort: str = "score", max_exp: str = "1"):
         floor = cfg["min_score_dashboard"] if min_score is None else min_score
-        rows = store.jobs(min_score=floor, status=status or "", limit=500, source=source)
+        # Experience bar. Defaults sharp (≤1 year) because she's a fresher; "any" turns
+        # it off. Unstated-exp roles stay visible but carry an "exp: ?" label.
+        exp_cap = int(max_exp) if max_exp.isdigit() else None
+        rows = store.jobs(min_score=floor, status=status or "", limit=500,
+                          source=source, max_exp=exp_cap)
         if q:
             ql = q.lower()
             rows = [r for r in rows
@@ -98,7 +112,8 @@ def create_app(cfg: dict) -> FastAPI:
             "SELECT DISTINCT source FROM jobs ORDER BY source").fetchall()]
         ctx = base_ctx("jobs")
         ctx.update({"rows": rows, "reasons": reasons, "floor": floor, "status": status,
-                    "source": source, "q": q, "sources": sources, "sort": sort})
+                    "source": source, "q": q, "sources": sources, "sort": sort,
+                    "max_exp": max_exp})
         return templates.TemplateResponse(request, "index.html", ctx)
 
     @app.get("/posts", response_class=HTMLResponse)
@@ -119,17 +134,39 @@ def create_app(cfg: dict) -> FastAPI:
         ctx.update({"applied": applied, "saved": saved, "reasons": reasons})
         return templates.TemplateResponse(request, "tracker.html", ctx)
 
-    @app.get("/outreach", response_class=HTMLResponse)
-    def outreach(request: Request, min_score: float = 62, status: str = "", limit: int = 25):
-        from ..outreach import build
-        from ..resume import load_profile
+    # ---------------------------------------------------------------- cv upload
 
-        rows = store.jobs(min_score=min_score, status=status or "", limit=limit)
-        profile = load_profile(cfg["profile_path"])
-        drafts = build([dict(r) for r in rows], profile, cfg["_root"])
-        ctx = base_ctx("outreach")
-        ctx.update({"drafts": drafts, "floor": min_score, "status": status})
-        return templates.TemplateResponse(request, "outreach.html", ctx)
+    @app.post("/upload-cv")
+    async def upload_cv(cv: UploadFile = File(...)):
+        """New CV in, new recs out: parse the PDF into the active profile, then
+        re-grade every stored job against it. Uploading a different CV repeats the
+        cycle — exactly 'if i upload another one i want other recs aligning to that'."""
+        from ..cli import rescore_all
+        from ..resume import build_profile
+
+        name = Path(cv.filename or "cv.pdf").name
+        if not name.lower().endswith(".pdf"):
+            return Response("PDF only, please 🧸", status_code=400)
+        data = await cv.read()
+        if len(data) > 8 * 1024 * 1024:
+            return Response("that PDF is over 8MB — export a lighter one", status_code=400)
+
+        dest = Path(cfg["profile_path"]).parent / "uploads"
+        dest.mkdir(parents=True, exist_ok=True)
+        pdf_path = dest / name
+        pdf_path.write_bytes(data)
+
+        try:
+            prof = build_profile(str(pdf_path), cfg["profile_path"])
+        except Exception as e:
+            return Response(f"couldn't read that PDF ({type(e).__name__}) — "
+                            f"is it a real text PDF, not a scan?", status_code=400)
+        if len(prof.get("skills", [])) < 3:
+            return Response("parsed the PDF but found almost no recognisable skills — "
+                            "is this a text PDF, not a scanned image?", status_code=400)
+
+        rescore_all(store, prof, cfg)
+        return RedirectResponse("/?uploaded=1", status_code=303)
 
     # ---------------------------------------------------------------- actions
 

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from .matching import matched_terms
 from .models import Job, Post
@@ -48,6 +48,37 @@ WRONG_FIELD = re.compile(
     r"technical support|support engineer|service desk|help ?desk|field engineer)\b", re.I)
 
 YEARS_REQ = re.compile(r"(\d+)\s*\+?\s*(?:-\s*\d+\s*)?year", re.I)
+
+# --- experience extraction -------------------------------------------------
+# A bare "N years" match is not an experience requirement: JDs say "60+ years of
+# heritage", "100 years old company", "2 years of runway". A number only counts when
+# the surrounding text is talking about the candidate's experience.
+YEARS_TOKEN = re.compile(
+    r"(\d{1,2})\s*(?:\+|\s*(?:-|–|to)\s*(\d{1,2}))?\s*\+?\s*y(?:ea)?rs?\b", re.I)
+EXP_CONTEXT = re.compile(
+    r"experience|exp\b|professional|industry|relevant|hands[- ]on|"
+    r"work(?:ing)?\s+(?:in|with|as|on)|minimum|at\s?least|track record|"
+    r"background in|proficien|expertise", re.I)
+
+
+def extract_years_req(text: str) -> Optional[int]:
+    """The lowest credible years-of-experience bar stated in a JD, or None.
+
+    Lowest, not highest: a JD listing "2+ years" for one duty and "5+ years preferred"
+    still admits candidates at the 2-year bar, and the entry bar is what decides
+    whether a fresher can apply at all.
+    """
+    if not text:
+        return None
+    reqs = []
+    for m in YEARS_TOKEN.finditer(text):
+        lo = int(m.group(1))
+        if lo > 15:      # "60+ years old", "25 years in business" — company age, not a bar
+            continue
+        ctx = text[max(0, m.start() - 60): m.end() + 60]
+        if EXP_CONTEXT.search(ctx):
+            reqs.append(lo)
+    return min(reqs) if reqs else None
 
 # Google and NVIDIA run separate "Software Engineer, PhD, Early Career" tracks. They
 # read as perfect new-grad matches on every other signal and are closed to her — she
@@ -143,12 +174,14 @@ def score_job(job: Job, profile: Dict, cfg: Dict) -> Tuple[float, List[str]]:
         if MASTERS_REQUIRED.search(job.description or ""):
             return 0.0, ["rejected: JD requires a Master's"]
 
-    # Years-of-experience wall in the body.
-    max_years = cfg.get("max_years_required", 3)
-    yrs = [int(m) for m in YEARS_REQ.findall(job.description or "")]
-    hard = [y for y in yrs if y > max_years]
-    if hard and min(yrs) > max_years:
-        return 0.0, [f"rejected: requires {min(hard)}+ years"]
+    # Years-of-experience wall. Sharp on purpose: a stated bar above the max with no
+    # fresher signal anywhere is a reject, not a penalty — Diya's exact complaint was
+    # high-scoring roles she opened and couldn't apply to ("sabmei exp rehta hai").
+    max_years = cfg.get("max_years_required", 1)
+    yreq = extract_years_req(job.description or "")
+    job.years_req = yreq
+    if yreq is not None and yreq > max_years and not JUNIOR_SIGNAL.search(blob):
+        return 0.0, [f"rejected: JD asks for {yreq}+ years experience"]
 
     # --- title fit --------------------------------------------------------
     if CORE_TITLE.search(title):
