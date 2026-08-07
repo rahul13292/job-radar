@@ -32,6 +32,9 @@ Excel application tracker.
 | MWF scheduler | Live, confirmed in prod logs |
 | Apify creator posts | Live, budget-guarded |
 | Email digest | **Not configured** — needs SMTP creds |
+| CV upload (2026-08-07) | Live — dashboard header, PDF -> profile -> full rescore inline; recs follow the active CV |
+| Experience gate v2 (2026-08-07) | Live — context-aware `extract_years_req`, sharp reject, `years_req` column, exp bar filter (default ≤1y), per-run LinkedIn JD enrichment |
+| Outreach engine | **REMOVED 2026-08-07** — built on 8/6, Rahul + Diya vetoed it same day; keep it dead |
 | Repo access | Rahul owner; diya1827 collaborator (write). Transfer to her was initiated 8/3, pending her accept |
 
 ---
@@ -109,7 +112,11 @@ re-scraping.
    scored the best posts in the whole feed a flat 0.
 6. **Posts stay up after roles close.** A "Hiring is Closed" post scored 87 before the
    closed-role filter.
-7. **Railway CLI respects `.gitignore` when uploading the build context.** `data/*.pdf`
+7. **80% of surfaced LinkedIn jobs had no JD stored**, so the years gate scored them on
+   title alone — Diya's "sabmei exp rehta hai". Fix is the per-run enrichment pass
+   (fetch JDs only for jobs above the dashboard floor); first prod run rejected 62% of
+   the blind rows as experienced-only. Never judge applyability without the JD text.
+8. **Railway CLI respects `.gitignore` when uploading the build context.** `data/*.pdf`
    was gitignored, so `COPY data/…pdf` failed on the builder *before the first log
    line* — the deploy showed only "scheduling build on Metal builder" and FAILED. Cost
    5 builds. **Empty Railway build logs = a COPY of an ignored file, not a platform
