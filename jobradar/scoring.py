@@ -25,7 +25,13 @@ SECURITY_TITLE = re.compile(
 
 TOO_SENIOR = re.compile(
     r"\b(senior|sr\.?|staff|principal|lead\b|manager|director|head of|vp\b|architect|"
-    r"distinguished|fellow|expert|specialist iv|"
+    r"distinguished|fellow|expert|"
+    # Ladder titles that don't contain "senior" but sit well above a fresher. Salesforce
+    # posts "Software Engineering LMTS - Backend", which scored 87 in her fresher view
+    # until these were added. MTS/SMTS/LMTS = (Lead/Senior) Member of Technical Staff.
+    r"lmts|smts|pmts|mts\b|member of technical staff|"
+    # In Indian services firms these are experienced-hire bands, not entry roles.
+    r"specialist|consultant|"
     # Levelled titles. She is a 2026 grad with internships only, so "Engineer II" and
     # "SDE-2" are already a rung above her — those get rejected, not merely penalised.
     r"ii+\b|iv\b|l[2-9]\b|level [2-9]\b|[- ][2-9]\b|grade [b-z]\b)\b", re.I)

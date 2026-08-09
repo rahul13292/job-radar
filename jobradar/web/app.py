@@ -90,10 +90,11 @@ def create_app(cfg: dict) -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request, min_score: float = None, status: str = "new",
-              source: str = "", q: str = "", sort: str = "score", max_exp: str = "1"):
+              source: str = "", q: str = "", sort: str = "score", max_exp: str = "0"):
         floor = cfg["min_score_dashboard"] if min_score is None else min_score
-        # Experience bar. Defaults sharp (≤1 year) because she's a fresher; "any" turns
-        # it off. Unstated-exp roles stay visible but carry an "exp: ?" label.
+        # Experience bar. Defaults to 0 years: she graduated months ago and has
+        # internships only, so a role asking for even 1 year is not hers to apply to.
+        # "any" turns the bar off. Unstated-exp roles stay visible, labeled "exp: ?".
         exp_cap = int(max_exp) if max_exp.isdigit() else None
         rows = store.jobs(min_score=floor, status=status or "", limit=500,
                           source=source, max_exp=exp_cap)

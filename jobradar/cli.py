@@ -35,8 +35,10 @@ def cmd_init(args, cfg) -> None:
 # --------------------------------------------------------------------------- run
 
 def cmd_run(args, cfg) -> None:
+    from .liveness import probe_surfaced, sweep_missing
     from .sources import ats, bigco, boards, linkedin_jobs, linkedin_posts
     from .sources import apify as apify_src
+    from .sources import firecrawl as firecrawl_src
     from .sources import linkedin_creators
     from .sources.base import SourceError
 
@@ -60,6 +62,7 @@ def cmd_run(args, cfg) -> None:
         ("bigco", lambda: bigco.run(cfg)),
         ("remoteok", lambda: boards.remoteok(cfg)),
         ("apify_jobs", lambda: apify_src.run_jobs(cfg)),
+        ("firecrawl", lambda: firecrawl_src.run(cfg)),
     ]
     for name, fn in job_runners:
         if not want(name):
@@ -81,6 +84,17 @@ def cmd_run(args, cfg) -> None:
         total_new += new
         store.log_run(name, started, len(found), new)
         print(f"[{name}] {len(found)} scraped → {len(kept)} on-profile → {new} new")
+
+        # These sources return their COMPLETE open list, so anything stored from them
+        # that didn't come back has been taken down. Sweep only after a fetch that
+        # actually returned rows — sweeping a failed run would bury the whole board.
+        if found:
+            by_source = {}
+            for j in found:
+                by_source.setdefault(j.source, set()).add(j.fingerprint)
+            swept = sum(sweep_missing(store, s, fps) for s, fps in by_source.items())
+            if swept:
+                print(f"[{name}] {swept} previously-stored role(s) no longer on the board")
 
     # ---- post sources
     post_runners = [
@@ -118,9 +132,16 @@ def cmd_run(args, cfg) -> None:
         print(f"[enrich] {tried} candidates → {fetched} JDs fetched → "
               f"{rejected} rejected as experienced-only")
 
+    # Liveness probe for the jobs she'd actually click. LinkedIn absence proves nothing
+    # (keyword-scoped, paginated), so those can only be caught by fetching the posting.
+    print("[liveness] checking surfaced roles are still open…", flush=True)
+    checked, dead = probe_surfaced(store, cfg)
+    print(f"[liveness] {checked} checked → {dead} found closed")
+
     c = store.counts()
-    print(f"\n{total_new} new this run. Library: {c['jobs']} roles ({c['new']} unreviewed, "
-          f"{c['saved']} saved, {c['applied']} applied), {c['posts']} posts.")
+    print(f"\n{total_new} new this run. Library: {c['jobs']} live roles ({c['new']} unreviewed, "
+          f"{c['saved']} saved, {c['applied']} applied), {c['posts']} posts, "
+          f"{c['gone']} expired and hidden.")
 
 
 # --------------------------------------------------------------------------- rescore
@@ -212,6 +233,17 @@ def enrich_linkedin(store: Store, prof: dict, cfg: dict, cap: int = 150) -> tupl
             (j.description[:20000], s, json.dumps(reasons), j.years_req, r["fingerprint"]))
     store.conn.commit()
     return len(rows), fetched, rejected
+
+
+def cmd_expire(args, cfg) -> None:
+    """Probe stored roles and hide the ones that have closed."""
+    from .liveness import probe_surfaced
+
+    store = Store(cfg["db_path"])
+    checked, dead = probe_surfaced(store, cfg, limit=args.limit)
+    c = store.counts()
+    print(f"probed {checked} roles → {dead} closed. "
+          f"{c['jobs']} live, {c['gone']} expired and hidden.")
 
 
 def cmd_enrich(args, cfg) -> None:
@@ -322,6 +354,10 @@ def main(argv=None) -> None:
     p = sub.add_parser("enrich", help="fetch missing JDs for surfaced LinkedIn jobs")
     p.add_argument("--cap", type=int, default=150)
     p.set_defaults(fn=cmd_enrich)
+
+    p = sub.add_parser("expire", help="probe surfaced roles and hide closed ones")
+    p.add_argument("--limit", type=int, default=120)
+    p.set_defaults(fn=cmd_expire)
 
     p = sub.add_parser("list", help="top matches in the terminal")
     p.add_argument("--min-score", type=float, default=50)

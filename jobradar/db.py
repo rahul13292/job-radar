@@ -87,6 +87,9 @@ class Store:
             ("jobs", "status_at", "TEXT"),      # when she marked it applied/saved
             ("posts", "status_at", "TEXT"),
             ("jobs", "years_req", "INTEGER"),   # stated experience bar; NULL = unstated
+            ("jobs", "gone", "INTEGER DEFAULT 0"),   # role taken down / closed
+            ("jobs", "gone_reason", "TEXT"),
+            ("jobs", "checked_at", "TEXT"),          # last liveness probe
         ):
             cols = {r["name"] for r in self.conn.execute(f"PRAGMA table_info({table})")}
             if col not in cols:
@@ -103,9 +106,11 @@ class Store:
                 cur = self.conn.execute(
                     "SELECT fingerprint FROM jobs WHERE fingerprint=?", (j.fingerprint,))
                 if cur.fetchone():
+                    # Seeing it again means it's open again: clear any expiry so a role
+                    # that was briefly pulled and reposted comes back to the board.
                     self.conn.execute(
-                        "UPDATE jobs SET last_seen=?, score=?, reasons=?, years_req=? "
-                        "WHERE fingerprint=?",
+                        "UPDATE jobs SET last_seen=?, score=?, reasons=?, years_req=?, "
+                        "gone=0, gone_reason=NULL WHERE fingerprint=?",
                         (ts, j.score, json.dumps(j.score_reasons), j.years_req, j.fingerprint),
                     )
                     continue
@@ -185,8 +190,11 @@ class Store:
     # ---------- reads ----------
 
     def jobs(self, min_score: float = 0, status: str = "", limit: int = 200,
-             since: str = "", source: str = "", max_exp: Optional[int] = None) -> List[sqlite3.Row]:
-        q = "SELECT * FROM jobs WHERE score >= ?"
+             since: str = "", source: str = "", max_exp: Optional[int] = None,
+             include_gone: bool = False) -> List[sqlite3.Row]:
+        # Closed roles are hidden by default. They stay in the table so a later scrape
+        # dedupes against them instead of resurfacing the same dead listing.
+        q = "SELECT * FROM jobs WHERE score >= ?" + ("" if include_gone else " AND gone=0")
         args: list = [min_score]
         if status:
             q += " AND status = ?"
@@ -224,12 +232,16 @@ class Store:
         ).fetchall()
 
     def counts(self) -> dict:
+        # Live board excludes expired rows; saved/applied are counted regardless, since
+        # those are her records and shouldn't shrink when a posting comes down.
         c = self.conn.execute(
-            "SELECT COUNT(*) n, SUM(status='new') new, SUM(status='saved') saved, "
-            "SUM(status='applied') applied FROM jobs").fetchone()
+            "SELECT SUM(gone=0) n, SUM(status='new' AND gone=0) new, "
+            "SUM(status='saved') saved, SUM(status='applied') applied FROM jobs").fetchone()
+        g = self.conn.execute(
+            "SELECT COUNT(*) n FROM jobs WHERE gone=1 AND status='new'").fetchone()
         p = self.conn.execute("SELECT COUNT(*) n FROM posts").fetchone()
         return {"jobs": c["n"] or 0, "new": c["new"] or 0, "saved": c["saved"] or 0,
-                "applied": c["applied"] or 0, "posts": p["n"] or 0}
+                "applied": c["applied"] or 0, "posts": p["n"] or 0, "gone": g["n"] or 0}
 
     def last_runs(self, limit: int = 20) -> List[sqlite3.Row]:
         return self.conn.execute(

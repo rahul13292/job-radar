@@ -49,7 +49,9 @@ blocked_companies:
 
 include_internships: false   # she graduates 2026 — flip to true if she wants intern conversions
 include_senior: false        # drops senior/staff/lead/manager AND levelled titles (Engineer II, SDE-2, L3)
-max_years_required: 1        # fresher: a JD demanding 2+ years is rejected outright
+max_years_required: 1        # reject JDs asking 2+ yrs. 0-1yr rows stay stored so the
+                             # dashboard exp bar can widen to them; the bar itself
+                             # defaults to 0 because she has zero years of experience.
 
 # Google/NVIDIA run "Software Engineer, PhD, Early Career" tracks that score ~90 on
 # every other signal and are closed to a BTech holder. Set true only if she ever
@@ -175,6 +177,15 @@ sources:
     enabled: false
     posts_per_profile: 10
     max_age_days: 14
+
+  # Firecrawl: renders JS and gets past bot walls, for the career sites nothing else
+  # can reach. Free tier is 1,000 credits/month (1 credit = 1 page), so the target list
+  # below costs ~15 credits per run, ~180/month on the MWF cadence.
+  # Needs FIRECRAWL_API_KEY. Without it the source logs why and returns nothing.
+  firecrawl:
+    enabled: true
+    max_pages_per_run: 20
+    timeout: 90
 
   # Apify-backed scraping: creator posts + the bot-walled job boards.
   # Costs real money per run — see budget_usd. Off until you switch it on.
@@ -308,6 +319,21 @@ workday:
   - {ats: workday, host: db.wd3, tenant: db, site: DBWebsite, label: Deutsche Bank}
   - {ats: workday, host: blackrock.wd1, tenant: blackrock, site: BlackRock_Professional, label: BlackRock}
   - {ats: workday, host: paypal.wd1, tenant: paypal, site: jobs, label: PayPal}
+
+# ---------------------------------------------------------------- firecrawl targets
+# The career sites that refuse every cheaper method. Each costs 1 Firecrawl credit
+# per run. Verified blocked without it: see README "What is NOT scraped directly".
+firecrawl_targets:
+  - {company: Google, url: "https://www.google.com/about/careers/applications/jobs/results/?location=India&q=software%20engineer&target_level=EARLY"}
+  - {company: Microsoft, url: "https://jobs.careers.microsoft.com/global/en/search?lc=India&p=Software%20Engineering&exp=Students%20and%20graduates"}
+  - {company: Apple, url: "https://jobs.apple.com/en-in/search?location=india-INDC&team=software-and-services-SFTWR"}
+  - {company: Meta, url: "https://www.metacareers.com/jobs?offices[0]=Bangalore%2C%20India&roles[0]=Full%20time%20employment"}
+  - {company: Uber, url: "https://www.uber.com/us/en/careers/list/?query=software%20engineer&location=IND--Bangalore"}
+  - {company: Zomato, url: "https://www.zomato.com/careers/"}
+  - {company: Swiggy, url: "https://careers.swiggy.com/#/careers"}
+  - {company: Zepto, url: "https://zeptonow.keka.com/careers/"}
+  - {company: Blinkit, url: "https://blinkit.com/careers"}
+  - {company: Flipkart, url: "https://www.flipkartcareers.com/#!/joblist"}
 
 # ---------------------------------------------------------------- linkedin creators
 # People who reliably post Indian SDE/security openings. Needs a cookie or Apify.

@@ -22,7 +22,7 @@
   </select>
   <label class="meta">exp
     <select name="max_exp">
-      {% for v, lbl in [('0','0 yrs only'),('1','≤ 1 yr'),('2','≤ 2 yrs'),('any','any')] %}
+      {% for v, lbl in [('0','fresher (0 yrs)'),('1','≤ 1 yr'),('2','≤ 2 yrs'),('any','any')] %}
       <option value="{{ v }}" {{ 'selected' if max_exp==v }}>{{ lbl }}</option>
       {% endfor %}
     </select>
