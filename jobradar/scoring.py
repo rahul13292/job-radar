@@ -25,7 +25,12 @@ SECURITY_TITLE = re.compile(
 
 TOO_SENIOR = re.compile(
     r"\b(senior|sr\.?|staff|principal|lead\b|manager|director|head of|vp\b|architect|"
-    r"distinguished|fellow|expert|"
+    # Plurals matter: "…Management Experts" slipped past a bare `expert` because \b
+    # after the word fails against the trailing "s".
+    r"distinguished|fellows?|experts?|veterans?|"
+    # Banking ladder. \bvp\b never matches AVP/SVP/EVP because the preceding letter is
+    # a word char — "Application Security Engineer - ADR, AVP" reached her board.
+    r"[aes]vp\b|assistant vice president|vice president|"
     # Ladder titles that don't contain "senior" but sit well above a fresher. Salesforce
     # posts "Software Engineering LMTS - Backend", which scored 87 in her fresher view
     # until these were added. MTS/SMTS/LMTS = (Lead/Senior) Member of Technical Staff.
