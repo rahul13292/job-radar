@@ -85,7 +85,10 @@ def _probe_one(row) -> tuple:
     return row["fingerprint"], False, ""
 
 
-def probe_surfaced(store: Store, cfg: Dict, limit: int = 60, workers: int = 8) -> tuple:
+def probe_surfaced(store: Store, cfg: Dict, limit: int = 250, workers: int = 8) -> tuple:
+    # Default covers the whole surfaced board in one run. At 60 it took three runs
+    # (a week on MWF) to cycle through ~170 jobs, so a closed role could sit on her
+    # board for days — which is the exact problem this module exists to prevent.
     """Check the highest-scoring live jobs she'd actually click, oldest-checked first."""
     floor = cfg.get("min_score_dashboard", 40)
     rows = store.conn.execute(
