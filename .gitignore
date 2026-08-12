@@ -8,3 +8,14 @@ data/*.db-shm
 data/profile.json
 data/*.pdf
 jobs.csv
+
+# Uploaded CVs. These are real people's contact details — they must never be committed.
+# They were tracked once (Aug 2026) via `git add -A` after upload testing and had to be
+# stripped from history before the repo could go public.
+data/uploads/
+*.pdf
+!docs/**/*.pdf
+
+# Personal targeting config (real people's LinkedIn profiles, her own preferences)
+config.local.yaml
+data/creators.yaml
