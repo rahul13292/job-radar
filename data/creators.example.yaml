@@ -1,0 +1,6 @@
+# Copy to data/creators.yaml and add the LinkedIn profiles you want monitored.
+# These people's posts are scraped via Apify, so only list accounts you have a
+# legitimate reason to follow.
+linkedin_creators:
+  - https://www.linkedin.com/in/some-recruiter/
+  - https://www.linkedin.com/in/another-hiring-manager/

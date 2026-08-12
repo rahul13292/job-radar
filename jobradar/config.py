@@ -50,6 +50,17 @@ def load_config(path: str = "") -> Dict:
             continue
         cfg["companies"].extend(extra.get("companies") or [])
 
+    # The tracked-creator list names real individuals, so it lives outside the repo.
+    cf = cfg.get("creator_file")
+    if cf and not cfg.get("linkedin_creators"):
+        f = Path(cf) if os.path.isabs(cf) else ROOT / cf
+        if f.exists():
+            try:
+                cfg["linkedin_creators"] = (yaml.safe_load(f.read_text()) or {}).get(
+                    "linkedin_creators", [])
+            except Exception:
+                cfg["linkedin_creators"] = []
+
     # De-dupe: a company can legitimately appear in both the curated list and the
     # YC file, and scraping the same board twice just wastes a request.
     seen, merged = set(), []

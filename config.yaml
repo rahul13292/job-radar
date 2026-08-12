@@ -337,29 +337,13 @@ firecrawl_targets:
 
 # ---------------------------------------------------------------- linkedin creators
 # People who reliably post Indian SDE/security openings. Needs a cookie or Apify.
-linkedin_creators:
-  - https://www.linkedin.com/in/debugwithshubham/
-  - https://www.linkedin.com/in/himanshu-mangla-himangla/
-  - https://www.linkedin.com/in/gursimarsm/
-  - https://www.linkedin.com/in/dhingra-akshay/
-  - https://www.linkedin.com/in/krishan9350/
-  - https://www.linkedin.com/in/manalimange/
-  - https://www.linkedin.com/in/prakash-iyer-b318b817/
-  - https://www.linkedin.com/in/shivam-chawla01/
-  - https://www.linkedin.com/in/nikhilgupta1997/
-  - https://www.linkedin.com/in/srilekha-chowdary-4b245a190/
-  - https://www.linkedin.com/in/abhishekrai2304/
-  - https://www.linkedin.com/in/nishantkalkhanda/
-  - https://www.linkedin.com/in/neha-jain-279b80118/
-  - https://www.linkedin.com/in/aditya-chourasiya-4aa111249/
-  - https://www.linkedin.com/in/aarya123/
-  - https://www.linkedin.com/in/arungoel0810/
-  - https://www.linkedin.com/in/adityajamwal02/
-  - https://www.linkedin.com/in/sakshi-parmar-b320b0178/
-  - https://www.linkedin.com/in/rishavchoudhary081/
-  - https://www.linkedin.com/in/akshat-jain-iit/
+# Loaded from data/creators.yaml, which is gitignored — see creators.example.yaml.
+# These are named real individuals, so the list lives outside the public repo.
+linkedin_creators: []
 
 # Extra board files merged into `companies` at load time (YC discovery writes here).
+creator_file: data/creators.yaml
+
 include_company_files:
   - data/yc_boards.yaml
   - data/tier_boards.yaml
