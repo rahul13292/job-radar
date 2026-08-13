@@ -36,6 +36,19 @@ def create_app(cfg: dict) -> FastAPI:
                 return Response("login required", status_code=401)
         return await call_next(request)
 
+    def age_days(row):
+        """Days since posting, so a stale listing is visible at a glance."""
+        p = row["posted_at"]
+        if not p:
+            return None
+        try:
+            d = datetime.fromisoformat(str(p).replace("Z", "+00:00"))
+            if d.tzinfo is None:
+                d = d.replace(tzinfo=timezone.utc)
+            return (datetime.now(timezone.utc) - d).days
+        except Exception:
+            return None
+
     def reasons(row) -> list:
         try:
             return json.loads(row["reasons"] or "[]")
@@ -114,7 +127,7 @@ def create_app(cfg: dict) -> FastAPI:
         ctx = base_ctx("jobs")
         ctx.update({"rows": rows, "reasons": reasons, "floor": floor, "status": status,
                     "source": source, "q": q, "sources": sources, "sort": sort,
-                    "max_exp": max_exp})
+                    "max_exp": max_exp, "age_days": age_days})
         return templates.TemplateResponse(request, "index.html", ctx)
 
     @app.get("/posts", response_class=HTMLResponse)

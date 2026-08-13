@@ -35,7 +35,7 @@ def cmd_init(args, cfg) -> None:
 # --------------------------------------------------------------------------- run
 
 def cmd_run(args, cfg) -> None:
-    from .liveness import probe_surfaced, sweep_missing
+    from .liveness import expire_stale, probe_surfaced, sweep_missing
     from .sources import ats, bigco, boards, linkedin_jobs, linkedin_posts
     from .sources import apify as apify_src
     from .sources import firecrawl as firecrawl_src
@@ -136,7 +136,9 @@ def cmd_run(args, cfg) -> None:
     # (keyword-scoped, paginated), so those can only be caught by fetching the posting.
     print("[liveness] checking surfaced roles are still open…", flush=True)
     checked, dead = probe_surfaced(store, cfg)
-    print(f"[liveness] {checked} checked → {dead} found closed")
+    unseen, old = expire_stale(store, cfg)
+    print(f"[liveness] {checked} probed → {dead} closed; "
+          f"{unseen} stale (source stopped returning them), {old} past max age")
 
     c = store.counts()
     print(f"\n{total_new} new this run. Library: {c['jobs']} live roles ({c['new']} unreviewed, "
@@ -239,10 +241,13 @@ def cmd_expire(args, cfg) -> None:
     """Probe stored roles and hide the ones that have closed."""
     from .liveness import probe_surfaced
 
+    from .liveness import expire_stale
+
     store = Store(cfg["db_path"])
     checked, dead = probe_surfaced(store, cfg, limit=args.limit)
+    unseen, old = expire_stale(store, cfg)
     c = store.counts()
-    print(f"probed {checked} roles → {dead} closed. "
+    print(f"probed {checked} → {dead} closed; {unseen} stale; {old} past max age. "
           f"{c['jobs']} live, {c['gone']} expired and hidden.")
 
 

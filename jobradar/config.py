@@ -51,6 +51,11 @@ def load_config(path: str = "") -> Dict:
         cfg["companies"].extend(extra.get("companies") or [])
 
     # The tracked-creator list names real individuals, so it lives outside the repo.
+    env_creators = os.getenv("LINKEDIN_CREATORS", "")
+    if env_creators and not cfg.get("linkedin_creators"):
+        # Production path: the file is gitignored, so the container gets the list here.
+        cfg["linkedin_creators"] = [u.strip() for u in env_creators.split(",") if u.strip()]
+
     cf = cfg.get("creator_file")
     if cf and not cfg.get("linkedin_creators"):
         f = Path(cf) if os.path.isabs(cf) else ROOT / cf

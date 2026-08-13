@@ -49,7 +49,8 @@
         · {{ r['location'] or ('Remote' if r['remote'] else '—') }}
         · {% if r['years_req'] is not none %}<b>exp: {{ r['years_req'] }}y</b>{% else %}exp: ?{% endif %}
         · {{ r['source'] }}
-        {% if r['posted_at'] %} · posted {{ r['posted_at'][:10] }}{% endif %}
+        {% set age = age_days(r) %}
+        {% if age is not none %} · <span {% if age > 14 %}style="color:var(--warn);font-weight:700"{% endif %}>{{ 'today' if age == 0 else (age|string) + 'd ago' }}</span>{% endif %}
         {% if r['status'] != 'new' %} · <span class="pill">{{ r['status'] }}</span>{% endif %}
       </div>
       <ul class="why">

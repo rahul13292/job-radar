@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import re
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Iterable, List, Set
 
 from .db import Store
@@ -64,6 +65,52 @@ def sweep_missing(store: Store, source: str, seen: Set[str]) -> int:
                 "WHERE fingerprint=?", [(ts, f) for f in missing])
             store.conn.commit()
     return len(missing)
+
+
+# Sources whose postings cannot be verified by fetching them. LinkedIn serves a
+# logged-out visitor the same HTTP 200 "Sign in to view" page whether a job is open or
+# closed, so probing them always answers "live" — which is why closed LinkedIn roles sat
+# on her board for days while the probe reported 1 dead out of 250. For these, absence
+# over several consecutive runs and raw age are the only signals available.
+UNVERIFIABLE_SOURCES = {"linkedin_jobs", "linkedin_companies", "apify_linkedin_jobs",
+                        "firecrawl"}
+
+
+def expire_stale(store: Store, cfg: Dict) -> tuple:
+    """Age out postings we cannot verify directly.
+
+    Two rules, both conservative:
+      - Not returned by its own source for `stale_days` (default 8 = three missed
+        Mon/Wed/Fri runs). The same keyword searches run every time, so a job that
+        stops coming back has almost certainly been taken down.
+      - Older than `max_posting_age_days` (default 30) regardless of source. A posting
+        that old is rarely still accepting, and she should not spend a click on it.
+    """
+    stale_days = int(cfg.get("stale_unseen_days", 8))
+    max_age = int(cfg.get("max_posting_age_days", 30))
+    cutoff_seen = (datetime.now(timezone.utc) - timedelta(days=stale_days)).isoformat()
+    cutoff_posted = (datetime.now(timezone.utc) - timedelta(days=max_age)).isoformat()
+
+    marks = ",".join("?" * len(UNVERIFIABLE_SOURCES))
+    with store.lock:
+        unseen = store.conn.execute(
+            f"""UPDATE jobs SET gone=1,
+                   gone_reason='not seen in {stale_days}d (likely closed)'
+                WHERE gone=0 AND status='new' AND source IN ({marks})
+                  AND last_seen < ?""",
+            (*UNVERIFIABLE_SOURCES, cutoff_seen)).rowcount
+        # Age cap applies ONLY to unverifiable sources. An ATS board re-confirms every
+        # open role on every run, so a Greenhouse posting from 60 days ago that still
+        # comes back is genuinely still open — ageing those out hid 496 live jobs the
+        # first time this ran without the source filter.
+        old = store.conn.execute(
+            f"""UPDATE jobs SET gone=1,
+                   gone_reason='posting older than {max_age}d'
+                WHERE gone=0 AND status='new' AND source IN ({marks})
+                  AND posted_at IS NOT NULL AND posted_at != '' AND posted_at < ?""",
+            (*UNVERIFIABLE_SOURCES, cutoff_posted)).rowcount
+        store.conn.commit()
+    return unseen, old
 
 
 def _probe_one(row) -> tuple:

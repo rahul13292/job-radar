@@ -58,6 +58,12 @@ max_years_required: 1        # reject JDs asking 2+ yrs. 0-1yr rows stay stored 
 # wants to see them.
 allow_advanced_degree_roles: false
 stale_days: 30
+
+# LinkedIn cannot be liveness-checked: it serves a logged-out client the same 200 page
+# whether a job is open or closed, so probing always says "live". For those sources,
+# absence and age are the only signals. 8 days = three missed Mon/Wed/Fri runs.
+stale_unseen_days: 8
+max_posting_age_days: 30
 offtitle_skill_floor: 6      # non-obvious titles need this many resume-skill hits to survive
 
 priority_skills:
